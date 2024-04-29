@@ -734,6 +734,7 @@ type Stage struct {
 	bgmvolume       int32
 	bgmloopstart    int32
 	bgmloopend      int32
+	bgmfreqmul      float32
 	bgmratiolife    int32
 	bgmtriggerlife  int32
 	bgmtriggeralt   int32
@@ -947,6 +948,7 @@ func loadStage(def string, main bool) (*Stage, error) {
 		sec[0].ReadI32("bgmvolume", &s.bgmvolume)
 		sec[0].ReadI32("bgmloopstart", &s.bgmloopstart)
 		sec[0].ReadI32("bgmloopend", &s.bgmloopend)
+		sec[0].ReadF32("bgmfreqmul", &s.bgmfreqmul)
 		sec[0].ReadI32("bgmratio.life", &s.bgmratiolife)
 		sec[0].ReadI32("bgmtrigger.life", &s.bgmtriggerlife)
 		sec[0].ReadI32("bgmtrigger.alt", &s.bgmtriggeralt)
