@@ -258,6 +258,7 @@ func (bgm *Bgm) UpdateVolume() {
 	}
 	// TODO: Throw a debug warning if this triggers
 	if bgm.bgmVolume > sys.maxBgmVolume {
+		sys.errLog.Printf("WARNING: BGM volume set beyond expected range (value: %v). Clamped to MaxBgmVolume", bgm.bgmVolume)
 		bgm.bgmVolume = sys.maxBgmVolume
 	}
 	volume := -5 + float64(sys.bgmVolume)*0.06*(float64(sys.masterVolume)/100)*(float64(bgm.bgmVolume)/100)
@@ -268,7 +269,7 @@ func (bgm *Bgm) UpdateVolume() {
 	speaker.Unlock()
 }
 
-func (bgm *Bgm) UpdateFreqMul(freqmul float32) {
+func (bgm *Bgm) SetFreqMul(freqmul float32) {
 	if bgm.freqmul != freqmul {
 		if bgm.ctrl != nil {
 			srcRate := bgm.sampleRate
@@ -283,7 +284,7 @@ func (bgm *Bgm) UpdateFreqMul(freqmul float32) {
 	}
 }
 
-func (bgm *Bgm) UpdateLoopPoints(bgmLoopStart int, bgmLoopEnd int) {
+func (bgm *Bgm) SetLoopPoints(bgmLoopStart int, bgmLoopEnd int) {
 	// Set both at once, why not
 	if bgm.bgmLoopStart != bgmLoopStart && bgm.bgmLoopEnd != bgmLoopEnd {
 		speaker.Lock()

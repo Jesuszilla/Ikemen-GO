@@ -8590,7 +8590,7 @@ const (
 
 func (sc modifyBgm) Run(c *Char, _ []int32) bool {
 	var volumeSet, loopStartSet, loopEndSet, posSet, freqSet = false, false, false, false, false
-	var volume, loopstart, loopend, position int = 1, 100, 0, 0
+	var volume, loopstart, loopend, position int = 100, 0, 0, 0
 	var freqmul float32 = 1.0
 	StateControllerBase(sc).run(c, func(id byte, exp []BytecodeExp) bool {
 		switch id {
@@ -8619,32 +8619,20 @@ func (sc modifyBgm) Run(c *Char, _ []int32) bool {
 		return true
 	})
 	if sys.bgm.ctrl != nil {
-		// Set unset values to what's there currently
-		if !volumeSet {
-			volume = sys.bgm.bgmVolume
-		}
-		if !loopStartSet {
-			loopstart = sys.bgm.bgmLoopStart
-		}
-		if !loopEndSet {
-			loopend = sys.bgm.bgmLoopEnd
-		}
-		if !freqSet {
-			freqmul = sys.bgm.freqmul
-		}
-
 		// Set values that are different only
-		if sys.bgm.bgmVolume != volume {
+		if volumeSet {
+			volumeScaled := int(float64(volume) / 100.0 * float64(sys.maxBgmVolume))
+			sys.bgm.bgmVolume = int(Min(int32(volumeScaled), int32(sys.maxBgmVolume)))
 			sys.bgm.UpdateVolume()
 		}
 		if posSet {
 			sys.bgm.Seek(position)
 		}
-		if sys.bgm.bgmLoopStart != loopstart || sys.bgm.bgmLoopEnd != loopend {
-			sys.bgm.UpdateLoopPoints(loopstart, loopend)
+		if (loopStartSet && sys.bgm.bgmLoopStart != loopstart) || (loopEndSet && sys.bgm.bgmLoopEnd != loopend) {
+			sys.bgm.SetLoopPoints(loopstart, loopend)
 		}
-		if sys.bgm.freqmul != freqmul {
-			sys.bgm.UpdateFreqMul(freqmul)
+		if freqSet && sys.bgm.freqmul != freqmul {
+			sys.bgm.SetFreqMul(freqmul)
 		}
 		return true
 	}

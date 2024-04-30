@@ -1826,7 +1826,7 @@ func systemScriptInit(l *lua.LState) {
 	})
 	luaRegister(l, "setBGMFreqMul", func(l *lua.LState) int {
 		freqmul := ClampF(float32(numArg(l, 1)), 0.01, 5.0)
-		sys.bgm.UpdateFreqMul(freqmul)
+		sys.bgm.SetFreqMul(freqmul)
 		return 0
 	})
 	luaRegister(l, "setBGMLoopPoints", func(l *lua.LState) int {
@@ -1837,7 +1837,7 @@ func systemScriptInit(l *lua.LState) {
 		if l.GetTop() >= 2 && numArg(l, 2) > 1 {
 			loopend = int(numArg(l, 2))
 		}
-		sys.bgm.UpdateLoopPoints(loopstart, loopend)
+		sys.bgm.SetLoopPoints(loopstart, loopend)
 		return 0
 	})
 	luaRegister(l, "setBGMPosition", func(l *lua.LState) int {
