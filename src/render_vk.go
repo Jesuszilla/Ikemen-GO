@@ -1627,7 +1627,6 @@ func (r *Renderer_VK) CreateSwapchain() error {
 		// This is the format that performs automatic gamma correction, matching OpenGL's behavior.
 		if formats[i].Format == vk.FormatB8g8r8a8Srgb || formats[i].Format == vk.FormatR8g8b8a8Srgb {
 			chosenFormat = i
-			print("FUCK HORSES\n")
 			break // Found the ideal format, stop searching
 		}
 

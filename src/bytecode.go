@@ -10667,7 +10667,11 @@ const (
 )
 
 func (sc forceFeedback) Run(c *Char, _ []int32) bool {
-	crun := c
+	crun := getRedirectedChar(c, StateControllerBase(sc), forceFeedback_redirectid, "ForceFeedback")
+	if crun == nil {
+		return false
+	}
+
 	waveform := waveform_sine
 	// var lo, hi uint16 = 0, 0
 	time := uint32(60)
@@ -10718,12 +10722,6 @@ func (sc forceFeedback) Run(c *Char, _ []int32) bool {
 		// We really don't need this because of redirectID and we have more than 2 players
 		case forceFeedback_self:
 			// self = exp[0].evalB(c)
-		case forceFeedback_redirectid:
-			if rid := sys.playerID(exp[0].evalI(c)); rid != nil {
-				crun = rid
-			} else {
-				return false
-			}
 		}
 		if crun.controller >= 0 && crun.controller < len(sys.ffbparams) {
 			joy := crun.controller
@@ -11398,8 +11396,9 @@ const (
 )
 
 func (sc rumbleController) Run(c *Char, _ []int32) bool {
+	crun := getRedirectedChar(c, StateControllerBase(sc), rumbleController_redirectid, "RumbleController")
 	var hi, lo uint16 = 0, 0
-	var joy int = c.controller
+	var joy int = crun.controller
 	var ticks uint32 = 1
 	StateControllerBase(sc).run(c, func(paramID byte, exp []BytecodeExp) bool {
 		switch paramID {
@@ -11409,12 +11408,6 @@ func (sc rumbleController) Run(c *Char, _ []int32) bool {
 			lo = uint16(exp[0].evalI(c))
 		case rumbleController_time:
 			ticks = uint32(exp[0].evalI(c))
-		case rumbleController_redirectid:
-			if rid := sys.playerID(exp[0].evalI(c)); rid != nil {
-				joy = rid.controller
-			} else {
-				return false
-			}
 		}
 		if joy >= 0 && joy < len(sys.ffbparams) {
 			input.RumbleController(joy, lo, hi, ticks)
