@@ -1904,7 +1904,6 @@ function options.f_start()
 			end
 			--appending the menu table
 			if j == 1 then --first string after menu.itemname (either reserved one or custom submenu assignment)
-				if c == 'rumble' then print("WHAT THE FUUUUUUUUUUUUCK\n") end
 				if options.menu.submenu[c] == nil or c == 'empty' then
 					options.menu.submenu[c] = {title = main.f_itemnameUpper(motif.option_info['menu_itemname_' .. suffix], motif.option_info.menu_title_uppercase == 1), submenu = {}, items = {}}
 					options.menu.submenu[c].loop = options.f_createMenu(options.menu.submenu[c], false)
@@ -1925,7 +1924,6 @@ function options.f_start()
 				t_pos.name = c
 			else --following strings
 				if t_pos.submenu[c] == nil or c == 'empty' then
-					if c == 'rumble' then print("WHAT THE FUUUUUUUUUUUUUUUUUUUUUUCK\n") end
 					t_pos.submenu[c] = {title = main.f_itemnameUpper(motif.option_info['menu_itemname_' .. suffix], motif.option_info.menu_title_uppercase == 1), submenu = {}, items = {}}
 					t_pos.submenu[c].loop = options.f_createMenu(t_pos.submenu[c], false)
 					table.insert(t_pos.items, {
