@@ -966,6 +966,12 @@ const (
 	OC_ex2_attackmul
 	OC_ex2_defencemul
 	OC_ex2_guardcount
+	OC_ex2_analog_leftx
+	OC_ex2_analog_lefty
+	OC_ex2_analog_rightx
+	OC_ex2_analog_righty
+	OC_ex2_analog_lefttrigger
+	OC_ex2_analog_righttrigger
 )
 
 type StringPool struct {
@@ -3832,6 +3838,18 @@ func (be BytecodeExp) run_ex2(c *Char, i *int, oc *Char) {
 		sys.bcStack.PushF(float32(c.finalDefense / float64(c.gi().defenceBase) * 100))
 	case OC_ex2_guardcount:
 		sys.bcStack.PushI(c.guardCount)
+	case OC_ex2_analog_leftx:
+		sys.bcStack.PushF((*c.analogAxes)[0])
+	case OC_ex2_analog_lefty:
+		sys.bcStack.PushF((*c.analogAxes)[1])
+	case OC_ex2_analog_rightx:
+		sys.bcStack.PushF((*c.analogAxes)[2])
+	case OC_ex2_analog_righty:
+		sys.bcStack.PushF((*c.analogAxes)[3])
+	case OC_ex2_analog_lefttrigger:
+		sys.bcStack.PushF((*c.analogAxes)[4])
+	case OC_ex2_analog_righttrigger:
+		sys.bcStack.PushF((*c.analogAxes)[5])
 	default:
 		sys.errLog.Printf("%v\n", be[*i-1])
 		c.panic()
@@ -10649,18 +10667,32 @@ const (
 )
 
 func (sc forceFeedback) Run(c *Char, _ []int32) bool {
-	/*crun := c
-	waveform := int32(0)
-	time := int32(60)
+	crun := c
+	waveform := waveform_sine
+	// var lo, hi uint16 = 0, 0
+	time := uint32(60)
 	freq := [4]float32{128, 0, 0, 0}
 	ampl := [4]float32{128, 0, 0, 0}
-	self := true
+	// self := true
 	StateControllerBase(sc).run(c, func(paramID byte, exp []BytecodeExp) bool {
 		switch paramID {
 		case forceFeedback_waveform:
-			waveform = exp[0].evalI(c)
+			// We're just gonna use this to hack the parameters in
+			wf := string(*(*[]byte)(unsafe.Pointer(&exp[0])))
+			switch wf {
+			case "off":
+				waveform = waveform_off
+			default:
+				fallthrough
+			case "sine":
+				waveform = waveform_sine
+			case "square":
+				waveform = waveform_square
+			case "sinesquare":
+				waveform = waveform_sinesquare
+			}
 		case forceFeedback_time:
-			time = exp[0].evalI(c)
+			time = uint32(exp[0].evalI(c))
 		case forceFeedback_freq:
 			freq[0] = exp[0].evalF(c)
 			if len(exp) > 1 {
@@ -10683,8 +10715,9 @@ func (sc forceFeedback) Run(c *Char, _ []int32) bool {
 			if len(exp) > 3 {
 				ampl[3] = exp[3].evalF(c)
 			}
+		// We really don't need this because of redirectID and we have more than 2 players
 		case forceFeedback_self:
-			self = exp[0].evalB(c)
+			// self = exp[0].evalB(c)
 		case forceFeedback_redirectid:
 			if rid := sys.playerID(exp[0].evalI(c)); rid != nil {
 				crun = rid
@@ -10692,9 +10725,19 @@ func (sc forceFeedback) Run(c *Char, _ []int32) bool {
 				return false
 			}
 		}
+		if crun.controller >= 0 && crun.controller < len(sys.ffbparams) {
+			joy := crun.controller
+			sys.ffbparams[sys.inputRemap[sys.joystickConfig[joy].Joy]] = ForceFeedbackParams{
+				timer:    time,
+				start:    ampl[0],
+				d1:       ampl[1],
+				d2:       ampl[2],
+				d3:       ampl[3],
+				waveform: waveform,
+			}
+		}
 		return true
-	})*/
-	// TODO: not implemented
+	})
 	return false
 }
 
@@ -11339,6 +11382,42 @@ func (sc roundTimeSet) Run(c *Char, _ []int32) bool {
 			if sys.maxRoundTime != -1 {
 				sys.curRoundTime = Clamp(exp[0].evalI(c), 0, sys.maxRoundTime)
 			}
+		}
+		return true
+	})
+	return false
+}
+
+type rumbleController StateControllerBase
+
+const (
+	rumbleController_lo byte = iota
+	rumbleController_hi
+	rumbleController_time
+	rumbleController_redirectid
+)
+
+func (sc rumbleController) Run(c *Char, _ []int32) bool {
+	var hi, lo uint16 = 0, 0
+	var joy int = c.controller
+	var ticks uint32 = 1
+	StateControllerBase(sc).run(c, func(paramID byte, exp []BytecodeExp) bool {
+		switch paramID {
+		case rumbleController_hi:
+			hi = uint16(exp[0].evalI(c))
+		case rumbleController_lo:
+			lo = uint16(exp[0].evalI(c))
+		case rumbleController_time:
+			ticks = uint32(exp[0].evalI(c))
+		case rumbleController_redirectid:
+			if rid := sys.playerID(exp[0].evalI(c)); rid != nil {
+				joy = rid.controller
+			} else {
+				return false
+			}
+		}
+		if joy >= 0 && joy < len(sys.ffbparams) {
+			input.RumbleController(joy, lo, hi, ticks)
 		}
 		return true
 	})

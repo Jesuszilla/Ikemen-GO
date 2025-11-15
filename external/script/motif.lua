@@ -158,8 +158,8 @@ local motif =
 		textinput_overlay_window = {0, 0, motifLocalcoord(0), motifLocalcoord(1)}, --Ikemen feature
 		textinput_overlay_col = {0, 0, 0}, --Ikemen feature
 		textinput_overlay_alpha = {0, 128}, --Ikemen feature
-		menu_next_key = '$D&$F', --Ikemen feature
-		menu_previous_key = '$U&$B', --Ikemen feature
+		menu_next_key = '$D&$F&LS_X+&LS_Y+', --Ikemen feature
+		menu_previous_key = '$U&$B&LS_X-&LS_Y-', --Ikemen feature
 		menu_accept_key = 'a&b&c&x&y&z&s', --Ikemen feature
 		menu_hiscore_key = 's', --Ikemen feature
 		menu_pos = {159, 158},
@@ -726,13 +726,13 @@ local motif =
 		p2_teammenu_ratio7_icon_offset = {0, 0}, --Ikemen feature
 		p2_teammenu_ratio7_icon_facing = 1, --Ikemen feature
 		p2_teammenu_ratio7_icon_scale = {1.0, 1.0}, --Ikemen feature
-		p1_teammenu_next_key = '$D', --Ikemen feature
-		p1_teammenu_previous_key = '$U', --Ikemen feature
+		p1_teammenu_next_key = '$D&LS_Y+', --Ikemen feature
+		p1_teammenu_previous_key = '$U&LS_Y-', --Ikemen feature
 		p1_teammenu_add_key = '$F', --Ikemen feature
 		p1_teammenu_subtract_key = '$B', --Ikemen feature
 		p1_teammenu_accept_key = 'a&b&c&x&y&z&s', --Ikemen feature
-		p2_teammenu_next_key = '$D', --Ikemen feature
-		p2_teammenu_previous_key = '$U', --Ikemen feature
+		p2_teammenu_next_key = '$D&LS_Y+', --Ikemen feature
+		p2_teammenu_previous_key = '$U&LS_Y-', --Ikemen feature
 		p2_teammenu_add_key = '$B', --Ikemen feature
 		p2_teammenu_subtract_key = '$F', --Ikemen feature
 		p2_teammenu_accept_key = 'a&b&c&x&y&z&s', --Ikemen feature
@@ -783,8 +783,8 @@ local motif =
 		p1_palmenu_bg_offset = {0, 0}, --Ikemen feature
 		p1_palmenu_bg_facing = 1, --Ikemen feature
 		p1_palmenu_bg_scale = {1.0, 1.0}, --Ikemen feature
-		p1_palmenu_next_key = '$U&$F', --Ikemen feature
-		p1_palmenu_previous_key = '$D&$B', --Ikemen feature
+		p1_palmenu_next_key = '$U&$F&LS_Y-&LS_X+', --Ikemen feature
+		p1_palmenu_previous_key = '$D&$B&LS_Y+&LS_X-', --Ikemen feature
 		p1_palmenu_accept_key = 'a&b&c&x&y&z', --Ikemen feature
 		p1_palmenu_preview_anim = -1, --Ikemen feature
 		p1_palmenu_preview_spr = {}, --Ikemen feature
@@ -803,8 +803,8 @@ local motif =
 		p2_palmenu_bg_offset = {0, 0}, --Ikemen feature
 		p2_palmenu_bg_facing = 1, --Ikemen feature
 		p2_palmenu_bg_scale = {1.0, 1.0}, --Ikemen feature
-		p2_palmenu_next_key = '$U&$F', --Ikemen feature
-		p2_palmenu_previous_key = '$D&$B', --Ikemen feature
+		p2_palmenu_next_key = '$U&$F&LS_Y-&LS_X+', --Ikemen feature
+		p2_palmenu_previous_key = '$D&$B&LS_Y+&LS_X-', --Ikemen feature
 		p2_palmenu_accept_key = 'a&b&c&x&y&z', --Ikemen feature
 		p2_palmenu_preview_anim = -1, --Ikemen feature
 		p2_palmenu_preview_spr = {}, --Ikemen feature
@@ -1446,6 +1446,7 @@ local motif =
 		keymenu_itemname_menu = 'Menu', --Ikemen feature
 		keymenu_itemname_back = 'Back', --Ikemen feature
 		keymenu_itemname_page = 'Page', --Ikemen feature
+		keymenu_itemname_rumble = 'Rumble', --Ikemen feature
 		textinput_offset = {25, 32}, --Ikemen feature
 		textinput_font = {'default-3x5.def', 0, 1, 191, 191, 191, 255, -1}, --Ikemen feature
 		textinput_xshear = 0.0, --Ikemen feature
@@ -1871,8 +1872,8 @@ local motif =
 		title_angle = 0.0, --Ikemen feature
 		title_scale = {1.0, 1.0}, --Ikemen feature
 		title_text = 'MAIN MENU', --Ikemen feature
-		menu_next_key = '$D&$F', --Ikemen feature
-		menu_previous_key = '$U&$B', --Ikemen feature
+		menu_next_key = '$D&$F&LS_X+&LS_Y+', --Ikemen feature
+		menu_previous_key = '$U&$B&LS_X-&LS_Y-', --Ikemen feature
 		menu_accept_key = 'a&b&c&x&y&z&s', --Ikemen feature
 		menu_pos = {159, 158}, --Ikemen feature
 		menu_tween_factor = 0.3, --Ikemen feature
@@ -3295,7 +3296,9 @@ for _, v in ipairs({
 	motif.dialogue_info.cancel_key,
 }) do
 	for _, cmd in ipairs (main.f_extractKeys(v)) do
-		main.f_commandAdd(cmd, cmd)
+		if not cmd:match('[L|R]S_[X|Y]') then
+			main.f_commandAdd(cmd, cmd)
+		end
 	end
 end
 for i = 1, 2 do

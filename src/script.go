@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
-	"strconv"
 	"strings"
 	"time"
 
@@ -1722,7 +1721,7 @@ func systemScriptInit(l *lua.LState) {
 		return 1
 	})
 	luaRegister(l, "getClipboardString", func(*lua.LState) int {
-		s := sys.window.Window.GetClipboardString()
+		s := sys.window.GetClipboardString()
 		l.Push(lua.LString(s))
 		return 1
 	})
@@ -1783,17 +1782,17 @@ func systemScriptInit(l *lua.LState) {
 				axes := input.GetJoystickAxes(joy)
 				btns := input.GetJoystickButtons(joy)
 
-				s = CheckAxisForDpad(joy, &axes, len(btns))
+				s = CheckAxisForDpad(axes, len(btns))
 				if s != "" {
 					break
 				}
-				s = CheckAxisForTrigger(joy, &axes)
+				s = CheckAxisForTrigger(axes)
 				if s != "" {
 					break
 				}
 				for i := range btns {
 					if btns[i] > 0 {
-						s = strconv.Itoa(i)
+						s = ButtonToStringLUT[i]
 					}
 				}
 				if s != "" {
@@ -2528,10 +2527,7 @@ func systemScriptInit(l *lua.LState) {
 					sys.keyConfig[pn-1].kM = btn
 				}
 			} else {
-				btn, err := strconv.Atoi(lua.LVAsString(value))
-				if err != nil {
-					btn = 999
-				}
+				btn := StringToButtonLUT[lua.LVAsString(value)]
 				switch int(lua.LVAsNumber(key)) {
 				case 1:
 					sys.joystickConfig[pn-1].dU = btn

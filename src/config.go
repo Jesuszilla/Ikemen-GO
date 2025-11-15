@@ -35,6 +35,7 @@ type KeysProperties struct {
 	W        string `ini:"W"`
 	Menu     string `ini:"Menu"`
 	GUID     string `ini:"GUID"`
+	RumbleOn bool   `ini:"RumbleOn"`
 }
 
 // Motif represents the top-level config structure.
@@ -377,31 +378,26 @@ func (c *Config) sysSet() {
 	stoki := func(key string) int {
 		return int(StringToKey(key))
 	}
-	Atoi := func(key string) int {
-		if i, err := strconv.Atoi(key); err == nil {
-			return i
-		}
-		return 999
-	}
 	for i := 1; i <= c.Config.Players; i++ {
 		if kc, ok := c.Keys[fmt.Sprintf("keys_p%d", i)]; ok {
 			newKeyConfig := KeyConfig{
-				Joy:  kc.Joystick,
-				GUID: kc.GUID,
-				dU:   stoki(kc.Up),
-				dD:   stoki(kc.Down),
-				dL:   stoki(kc.Left),
-				dR:   stoki(kc.Right),
-				kA:   stoki(kc.A),
-				kB:   stoki(kc.B),
-				kC:   stoki(kc.C),
-				kX:   stoki(kc.X),
-				kY:   stoki(kc.Y),
-				kZ:   stoki(kc.Z),
-				kS:   stoki(kc.Start),
-				kD:   stoki(kc.D),
-				kW:   stoki(kc.W),
-				kM:   stoki(kc.Menu),
+				Joy:      kc.Joystick,
+				GUID:     kc.GUID,
+				dU:       stoki(kc.Up),
+				dD:       stoki(kc.Down),
+				dL:       stoki(kc.Left),
+				dR:       stoki(kc.Right),
+				kA:       stoki(kc.A),
+				kB:       stoki(kc.B),
+				kC:       stoki(kc.C),
+				kX:       stoki(kc.X),
+				kY:       stoki(kc.Y),
+				kZ:       stoki(kc.Z),
+				kS:       stoki(kc.Start),
+				kD:       stoki(kc.D),
+				kW:       stoki(kc.W),
+				kM:       stoki(kc.Menu),
+				rumbleOn: kc.RumbleOn,
 			}
 			sys.keyConfig = append(sys.keyConfig, newKeyConfig)
 		} else {
@@ -410,22 +406,23 @@ func (c *Config) sysSet() {
 		if _, ok := sys.cmdFlags["-nojoy"]; !ok {
 			if kc, ok := c.Joystick[fmt.Sprintf("joystick_p%d", i)]; ok {
 				newKeyConfig := KeyConfig{
-					Joy:  kc.Joystick,
-					GUID: kc.GUID,
-					dU:   Atoi(kc.Up),
-					dD:   Atoi(kc.Down),
-					dL:   Atoi(kc.Left),
-					dR:   Atoi(kc.Right),
-					kA:   Atoi(kc.A),
-					kB:   Atoi(kc.B),
-					kC:   Atoi(kc.C),
-					kX:   Atoi(kc.X),
-					kY:   Atoi(kc.Y),
-					kZ:   Atoi(kc.Z),
-					kS:   Atoi(kc.Start),
-					kD:   Atoi(kc.D),
-					kW:   Atoi(kc.W),
-					kM:   Atoi(kc.Menu),
+					Joy:      kc.Joystick,
+					GUID:     kc.GUID,
+					dU:       StringToButtonLUT[kc.Up],
+					dD:       StringToButtonLUT[kc.Down],
+					dL:       StringToButtonLUT[kc.Left],
+					dR:       StringToButtonLUT[kc.Right],
+					kA:       StringToButtonLUT[kc.A],
+					kB:       StringToButtonLUT[kc.B],
+					kC:       StringToButtonLUT[kc.C],
+					kX:       StringToButtonLUT[kc.X],
+					kY:       StringToButtonLUT[kc.Y],
+					kZ:       StringToButtonLUT[kc.Z],
+					kS:       StringToButtonLUT[kc.Start],
+					kD:       StringToButtonLUT[kc.D],
+					kW:       StringToButtonLUT[kc.W],
+					kM:       StringToButtonLUT[kc.Menu],
+					rumbleOn: kc.RumbleOn,
 				}
 				sys.joystickConfig = append(sys.joystickConfig, newKeyConfig)
 			} else {

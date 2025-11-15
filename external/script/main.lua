@@ -200,14 +200,41 @@ function main.f_btnPalNo(p)
 end
 
 --return bool based on command input
+local ANALOG_DEAD_TIME = 20 -- dead time to limit scrolling behavior
 main.playerInput = 1
+main.lastAxis = nil
+main.analogDeadTime = ANALOG_DEAD_TIME
 function main.f_input(p, b)
 	for _, pn in ipairs(p) do
 		for _, btn in ipairs(b) do
 			if btn == 'pal' then
 				if main.f_btnPalNo(pn) > 0 then
 					main.playerInput = pn
+					main.lastAxis = nil
 					return true
+				end
+			elseif btn == 'LS_X-' or btn == 'LS_X+' or btn == 'LS_Y-' or btn == 'LS_Y+' or
+					btn == 'RS_X-' or btn == 'RS_X+' or btn == 'RS_Y-' or btn == 'RS_Y+' or
+					btn == 'LT' or btn == 'RT' then
+				-- Need to remap for training selection or analog will not respond
+				local remap = gamemode('training') and pn == 2 and main.t_remaps[pn] or pn
+				local key = getJoystickKey(remap)
+				local stickIsNeutral = (key == nil or key == '')
+				-- Handle analog axes
+				if stickIsNeutral then
+					main.lastAxis = nil
+					return false
+				else
+					if main.analogDeadTime > 0 then
+						main.analogDeadTime = main.analogDeadTime - 1
+					end
+
+					if key == btn and main.analogDeadTime == 0 then
+						main.playerInput = pn
+						main.analogDeadTime = ANALOG_DEAD_TIME
+						main.lastAxis = key
+						return true
+					end
 				end
 			elseif commandGetState(main.t_cmd[pn], btn) then
 				main.playerInput = pn
@@ -3503,7 +3530,7 @@ function main.f_replay()
 	main.close = false
 	while true do
 		main.f_menuCommonDraw(t, item, cursorPosY, moveTxt, 'replay_info', 'replaybgdef', txt_titleReplay, motif.defaultReplay, {})
-		cursorPosY, moveTxt, item = main.f_menuCommonCalc(t, item, cursorPosY, moveTxt, 'replay_info', {'$U'}, {'$D'})
+		cursorPosY, moveTxt, item = main.f_menuCommonCalc(t, item, cursorPosY, moveTxt, 'replay_info', {'$U', 'LS_Y-'}, {'$D', 'LS_Y+'})
 		if main.close and not main.fadeActive then
 			main.f_bgReset(motif[main.background].bg)
 			main.f_fadeReset('fadein', motif[main.group])

@@ -7,14 +7,14 @@ import (
 	glfw "github.com/go-gl/glfw/v3.3/glfw"
 )
 
-type Window struct {
+type Window_GLFW struct {
 	*glfw.Window
 	title      string
 	fullscreen bool
 	x, y, w, h int
 }
 
-func (s *System) newWindow(w, h int) (*Window, error) {
+func (s *System) newWindow_GLFW(w, h int) (*Window_GLFW, error) {
 	var err error
 	var window *glfw.Window
 	var monitor *glfw.Monitor
@@ -83,9 +83,9 @@ func (s *System) newWindow(w, h int) (*Window, error) {
 	if sys.cfg.Video.RenderMode == "OpenGL 3.2" || sys.cfg.Video.RenderMode == "OpenGL 2.1" {
 		window.MakeContextCurrent()
 	}
-	window.SetKeyCallback(keyCallback)
-	window.SetCharModsCallback(charCallback)
-	window.SetRefreshCallback(refreshCallback)
+	window.SetKeyCallback(keyCallback_GLFW)
+	window.SetCharModsCallback(charCallback_GLFW)
+	window.SetRefreshCallback(refreshCallback_GLFW)
 
 	if sys.cfg.Video.RenderMode == "OpenGL 3.2" || sys.cfg.Video.RenderMode == "OpenGL 2.1" {
 		// V-Sync
@@ -94,26 +94,26 @@ func (s *System) newWindow(w, h int) (*Window, error) {
 		}
 	}
 
-	ret := &Window{window, s.cfg.Config.WindowTitle, fullscreen, x, y, w, h}
+	ret := &Window_GLFW{window, s.cfg.Config.WindowTitle, fullscreen, x, y, w, h}
 	return ret, err
 }
 
-func (w *Window) SwapBuffers() {
+func (w *Window_GLFW) SwapBuffers() {
 	w.Window.SwapBuffers()
 	// Retrieve GL timestamp now
-	glNow := glfw.GetTime()
-	if glNow-sys.prevTimestamp >= 1 {
-		sys.gameFPS = sys.absTickCountF / float32(glNow-sys.prevTimestamp)
-		sys.absTickCountF = 0
-		sys.prevTimestamp = glNow
-	}
+	// glNow := glfw.GetTime()
+	// if glNow-sys.prevTimestamp >= 1 {
+	// 	sys.gameFPS = sys.absTickCountF / float32(glNow-sys.prevTimestamp)
+	// 	sys.absTickCountF = 0
+	// 	sys.prevTimestamp = glNow
+	// }
 }
 
-func (w *Window) SetIcon(icon []image.Image) {
+func (w *Window_GLFW) SetIcon(icon []image.Image) {
 	w.Window.SetIcon(icon)
 }
 
-func (w *Window) SetSwapInterval(interval int) {
+func (w *Window_GLFW) SetSwapInterval(interval int) {
 	if sys.cfg.Video.RenderMode == "OpenGL 3.2" || sys.cfg.Video.RenderMode == "OpenGL 2.1" {
 		glfw.SwapInterval(interval)
 	} else {
@@ -121,13 +121,13 @@ func (w *Window) SetSwapInterval(interval int) {
 	}
 }
 
-func (w *Window) GetSize() (int, int) {
+func (w *Window_GLFW) GetSize() (int, int) {
 	return w.Window.GetSize()
 }
 
 // Calculates a position and size for the viewport to fill the window while centered (see render_gl.go)
 // Returns x, y, width, height respectively
-func (w *Window) GetScaledViewportSize() (int32, int32, int32, int32) {
+func (w *Window_GLFW) GetScaledViewportSize() (int32, int32, int32, int32) {
 	winWidth, winHeight := w.GetSize()
 
 	// If aspect ratio should not be kept, just return full window
@@ -159,11 +159,11 @@ func (w *Window) GetScaledViewportSize() (int32, int32, int32, int32) {
 	return x, y, resizedWidth, resizedHeight
 }
 
-func (w *Window) GetClipboardString() string {
+func (w *Window_GLFW) GetClipboardString() string {
 	return w.Window.GetClipboardString()
 }
 
-func (w *Window) toggleFullscreen() {
+func (w *Window_GLFW) toggleFullscreen() {
 	var mode = glfw.GetPrimaryMonitor().GetVideoMode()
 
 	if w.fullscreen {
@@ -187,34 +187,34 @@ func (w *Window) toggleFullscreen() {
 	w.fullscreen = !w.fullscreen
 }
 
-func (w *Window) pollEvents() {
+func (w *Window_GLFW) pollEvents() {
 	glfw.PollEvents()
 }
 
-func (w *Window) shouldClose() bool {
+func (w *Window_GLFW) shouldClose() bool {
 	return w.Window.ShouldClose()
 }
 
-func (w *Window) Close() {
+func (w *Window_GLFW) Close() {
 	glfw.Terminate()
 }
 
-func refreshCallback(w *glfw.Window) {
+func refreshCallback_GLFW(w *glfw.Window) {
 	if sys.cfg.Video.RenderMode == "OpenGL 3.2" || sys.cfg.Video.RenderMode == "OpenGL 2.1" {
 		gfx.EndFrame()
 		w.SwapBuffers()
 	}
 }
 
-func keyCallback(_ *glfw.Window, key Key, _ int, action glfw.Action, mk ModifierKey) {
-	switch action {
-	case glfw.Release:
-		OnKeyReleased(key, mk)
-	case glfw.Press:
-		OnKeyPressed(key, mk)
-	}
+func keyCallback_GLFW(_ *glfw.Window, key Key_GLFW, _ int, action glfw.Action, mk ModifierKey_GLFW) {
+	// switch action {
+	// case glfw.Release:
+	// 	OnKeyReleased_GLFW(key, mk)
+	// case glfw.Press:
+	// 	OnKeyPressed(key, mk)
+	// }
 }
 
-func charCallback(_ *glfw.Window, char rune, mk ModifierKey) {
+func charCallback_GLFW(_ *glfw.Window, char rune, mk ModifierKey_GLFW) {
 	OnTextEntered(string(char))
 }

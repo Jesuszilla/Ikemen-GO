@@ -67,9 +67,9 @@ menu.t_valuename = {
 function menu.f_valueChanged(t, m)
 	local valueitem = menu[t.itemname] or 1
 	local chk = valueitem
-	if main.f_input(main.t_players, {'$F'}) then
+	if main.f_input(main.t_players, {'$F', 'LS_X+'}) then
 		valueitem = valueitem + 1
-	elseif main.f_input(main.t_players, {'$B'}) then
+	elseif main.f_input(main.t_players, {'$B', 'LS_X-'}) then
 		valueitem = valueitem - 1
 	end
 	if valueitem > #menu.t_valuename[t.itemname] then
@@ -283,7 +283,7 @@ function menu.f_createMenu(tbl, section, bgdef, txt_title, bool_main)
 		else
 			main.f_menuCommonDraw(t, tbl.item, tbl.cursorPosY, tbl.moveTxt, section, bgdef, txt_title, motif.defaultMenu, {}, true)
 		end
-		tbl.cursorPosY, tbl.moveTxt, tbl.item = main.f_menuCommonCalc(t, tbl.item, tbl.cursorPosY, tbl.moveTxt, section, {'$U'}, {'$D'})
+		tbl.cursorPosY, tbl.moveTxt, tbl.item = main.f_menuCommonCalc(t, tbl.item, tbl.cursorPosY, tbl.moveTxt, section, {'$U', 'LS_Y-'}, {'$D', 'LS_Y+'})
 		txt_title:update({text = tbl.title})
 		if esc() or main.f_input(main.t_players, {'m'}) then
 			if bool_main then
@@ -648,22 +648,22 @@ function menu.f_commandlistRender(section, t)
 		main.pauseMenu = false
 		menu.currentMenu[1] = menu.currentMenu[2]
 		return
-	elseif main.f_input(main.t_players, {'$B'}) and #menu.t_movelists > 1 then
+	elseif main.f_input(main.t_players, {'$B', 'LS_X-'}) and #menu.t_movelists > 1 then
 		sndPlay(motif.files.snd_data, motif[section].cursor_move_snd[1], motif[section].cursor_move_snd[2])
 		menu.movelistChar = menu.movelistChar - 1
 		if menu.movelistChar < 1 then
 			menu.movelistChar = #menu.t_movelists
 		end
-	elseif main.f_input(main.t_players, {'$F'}) and #menu.t_movelists > 1 then
+	elseif main.f_input(main.t_players, {'$F', 'LS_X+'}) and #menu.t_movelists > 1 then
 		sndPlay(motif.files.snd_data, motif[section].cursor_move_snd[1], motif[section].cursor_move_snd[2])
 		menu.movelistChar = menu.movelistChar + 1
 		if menu.movelistChar > #menu.t_movelists then
 			menu.movelistChar = 1
 		end
-	elseif main.f_input(main.t_players, {'$U'}) and t.tbl.movelistLine > 1 then
+	elseif main.f_input(main.t_players, {'$U', 'LS_Y-'}) and t.tbl.movelistLine > 1 then
 		sndPlay(motif.files.snd_data, motif[section].cursor_move_snd[1], motif[section].cursor_move_snd[2])
 		t.tbl.movelistLine = t.tbl.movelistLine - 1
-	elseif main.f_input(main.t_players, {'$D'}) and t.tbl.movelistLine <= #cmdList - motif[section].movelist_window_visibleitems then
+	elseif main.f_input(main.t_players, {'$D', 'LS_Y+'}) and t.tbl.movelistLine <= #cmdList - motif[section].movelist_window_visibleitems then
 		sndPlay(motif.files.snd_data, motif[section].cursor_move_snd[1], motif[section].cursor_move_snd[2])
 		t.tbl.movelistLine = t.tbl.movelistLine + 1
 	end

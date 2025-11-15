@@ -14,8 +14,8 @@ import (
 	"unsafe"
 
 	gl "github.com/go-gl/gl/v3.2-core/gl"
-	glfw "github.com/go-gl/glfw/v3.3/glfw"
 	mgl "github.com/go-gl/mathgl/mgl32"
+	"github.com/veandco/go-sdl2/sdl"
 	"golang.org/x/mobile/exp/f32"
 )
 
@@ -463,7 +463,7 @@ func (r *Renderer_GL32) Init() {
 	}
 
 	// Store current timestamp
-	sys.prevTimestamp = glfw.GetTime()
+	sys.prevTimestamp = sdl.GetPerformanceCounter()
 
 	r.postShaderSelect = make([]*ShaderProgram_GL32, 1+len(sys.cfg.Video.ExternalShaders))
 
@@ -703,7 +703,7 @@ func (r *Renderer_GL32) EndFrame() {
 	gl.BindVertexArray(r.vao)
 
 	x, y, width, height := int32(0), int32(0), int32(sys.scrrect[2]), int32(sys.scrrect[3])
-	time := glfw.GetTime() // consistent time across all shaders
+	time := sdl.GetPerformanceCounter() // consistent time across all shaders
 
 	if sys.msaa > 0 {
 		gl.BindFramebuffer(gl.DRAW_FRAMEBUFFER, r.fbo_f)

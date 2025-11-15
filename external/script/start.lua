@@ -1066,7 +1066,7 @@ function start.f_cellMovement(selX, selY, cmd, side, snd, dir)
 	local tmpX = selX
 	local tmpY = selY
 	local found = false
-	if main.f_input({cmd}, {'$U'}) or dir == 'U' then
+	if main.f_input({cmd}, {'$U', 'LS_Y-'}) or dir == 'U' then
 		for i = 1, motif.select_info.rows do
 			selY = selY - 1
 			if selY < 0 then
@@ -1087,7 +1087,7 @@ function start.f_cellMovement(selX, selY, cmd, side, snd, dir)
 				break
 			end
 		end
-	elseif main.f_input({cmd}, {'$D'}) or dir == 'D' then
+	elseif main.f_input({cmd}, {'$D', 'LS_Y+'}) or dir == 'D' then
 		for i = 1, motif.select_info.rows do
 			selY = selY + 1
 			if selY >= motif.select_info.rows then
@@ -1108,7 +1108,7 @@ function start.f_cellMovement(selX, selY, cmd, side, snd, dir)
 				break
 			end
 		end
-	elseif main.f_input({cmd}, {'$B'}) or dir == 'B' then
+	elseif main.f_input({cmd}, {'$B', 'LS_X-'}) or dir == 'B' then
 		if dir ~= nil then
 			found, selX = start.f_searchEmptyBoxes(selX, selY, side, -1)
 		else
@@ -1126,7 +1126,7 @@ function start.f_cellMovement(selX, selY, cmd, side, snd, dir)
 				end
 			end
 		end
-	elseif main.f_input({cmd}, {'$F'}) or dir == 'F' then
+	elseif main.f_input({cmd}, {'$F', 'LS_X+'}) or dir == 'F' then
 		if dir ~= nil then
 			found, selX = start.f_searchEmptyBoxes(selX, selY, side, 1)
 		else
@@ -3427,21 +3427,21 @@ function start.f_stageMenu()
 	local stageListMinIdx = r.min
 	local stageListMaxIdx = #main.t_selectableStages
 
-	if main.f_input(main.t_players, {'$B'}) then
+	if main.f_input(main.t_players, {'$B', 'LS_X-'}) then
 		sndPlay(motif.files.snd_data, motif.select_info.stage_move_snd[1], motif.select_info.stage_move_snd[2])
 		stageListNo = stageListNo - 1
 		if stageListNo < stageListMinIdx then stageListNo = stageListMaxIdx end
-	elseif main.f_input(main.t_players, {'$F'}) then
+	elseif main.f_input(main.t_players, {'$F', 'LS_X+'}) then
 		sndPlay(motif.files.snd_data, motif.select_info.stage_move_snd[1], motif.select_info.stage_move_snd[2])
 		stageListNo = stageListNo + 1
 		if stageListNo > stageListMaxIdx then stageListNo = stageListMinIdx end
-	elseif main.f_input(main.t_players, {'$U'}) then
+	elseif main.f_input(main.t_players, {'$U', 'LS_Y-'}) then
 		sndPlay(motif.files.snd_data, motif.select_info.stage_move_snd[1], motif.select_info.stage_move_snd[2])
 		for i = 1, 10 do
 			stageListNo = stageListNo - 1
 			if stageListNo < stageListMinIdx then stageListNo = stageListMaxIdx end
 		end
-	elseif main.f_input(main.t_players, {'$D'}) then
+	elseif main.f_input(main.t_players, {'$D', 'LS_Y+'}) then
 		sndPlay(motif.files.snd_data, motif.select_info.stage_move_snd[1], motif.select_info.stage_move_snd[2])
 		for i = 1, 10 do
 			stageListNo = stageListNo + 1

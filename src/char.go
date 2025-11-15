@@ -2758,6 +2758,21 @@ type CharSystemVar struct {
 	prevSuperMovetime     int32
 }
 
+type FFBWaveform byte
+
+const (
+	waveform_off FFBWaveform = iota
+	waveform_sine
+	waveform_square
+	waveform_sinesquare
+)
+
+type ForceFeedbackParams struct {
+	timer             uint32
+	start, d1, d2, d3 float32
+	waveform          FFBWaveform
+}
+
 type Char struct {
 	name           string
 	palfx          *PalFX
@@ -2894,6 +2909,7 @@ type Char struct {
 	makeDustSpacing   int
 	hitStateChangeIdx int32
 	currentSctrlIndex int32
+	analogAxes        *[6]float32
 	//dustOldPos        [3]float32
 }
 
@@ -2923,6 +2939,7 @@ func (c *Char) init(n int, idx int32) {
 		playerNo:      n,
 		helperIndex:   idx,
 		controller:    n,
+		analogAxes:    &[6]float32{},
 		animPN:        n,
 		id:            -1,
 		runorder:      -1,
@@ -2959,7 +2976,7 @@ func (c *Char) init(n int, idx int32) {
 	}
 
 	// Set controller to CPU if applicable
-	if n >= 0 && n < len(sys.aiLevel) && sys.aiLevel[n] != 0 {
+	if c.controller >= 0 && c.controller < len(sys.aiLevel) && sys.aiLevel[c.controller] != 0 {
 		c.controller ^= -1
 	}
 

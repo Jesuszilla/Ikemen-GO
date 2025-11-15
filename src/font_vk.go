@@ -420,10 +420,10 @@ func (f *Font_VK) GenerateGlyphs(low, high rune) error {
 			pix[i] = rgba.Pix[i*4]
 		}
 		var uv [4]float32
-		textuteIndex := 0
-		for uv, ok = f.textures[textuteIndex].AddImage(int32(rgba.Rect.Dx()), int32(rgba.Rect.Dy()), pix); !ok; uv, ok = f.textures[textuteIndex].AddImage(int32(rgba.Rect.Dx()), int32(rgba.Rect.Dy()), pix) {
-			textuteIndex += 1
-			if textuteIndex >= len(f.textures) {
+		textureIndex := 0
+		for uv, ok = f.textures[textureIndex].AddImage(int32(rgba.Rect.Dx()), int32(rgba.Rect.Dy()), pix); !ok; uv, ok = f.textures[textureIndex].AddImage(int32(rgba.Rect.Dx()), int32(rgba.Rect.Dy()), pix) {
+			textureIndex += 1
+			if textureIndex >= len(f.textures) {
 				f.textures = append(f.textures, CreateTextureAtlas(256, 256, 8, true))
 				descriptorSet := gfxFont.(*FontRenderer_VK).freeDescriptors.Front()
 				gfxFont.(*FontRenderer_VK).freeDescriptors.Remove(descriptorSet)
@@ -431,7 +431,7 @@ func (f *Font_VK) GenerateGlyphs(low, high rune) error {
 				imageInfo := []vk.DescriptorImageInfo{
 					{
 						ImageLayout: vk.ImageLayoutShaderReadOnlyOptimal,
-						ImageView:   f.textures[textuteIndex].texture.(*Texture_VK).imageView,
+						ImageView:   f.textures[textureIndex].texture.(*Texture_VK).imageView,
 						Sampler:     gfx.(*Renderer_VK).spriteSamplers[1],
 					},
 				}
@@ -450,8 +450,21 @@ func (f *Font_VK) GenerateGlyphs(low, high rune) error {
 				vk.UpdateDescriptorSets(gfxFont.(*FontRenderer_VK).device, uint32(len(descriptorWrites)), descriptorWrites, 0, nil)
 			}
 		}
+
+		texAtlas := f.textures[textureIndex]
+		aw := float32(texAtlas.width)
+		ah := float32(texAtlas.height)
+
+		off_u := 0.5 / aw
+		off_v := 0.5 / ah
+
+		uv[0] += off_u
+		uv[1] += off_v
+		uv[2] -= off_u
+		uv[3] -= off_v
+
 		char.uv = uv
-		char.textureID = uint32(textuteIndex)
+		char.textureID = uint32(textureIndex)
 
 		//add char to fontChar list
 		f.fontChar[ch] = char

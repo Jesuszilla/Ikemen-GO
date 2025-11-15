@@ -11,22 +11,22 @@ import (
 	glfw "github.com/go-gl/glfw/v3.3/glfw"
 )
 
-type Input struct {
+type Input_GLFW struct {
 	joystick []glfw.Joystick
 }
 
-type Key = glfw.Key
-type ModifierKey = glfw.ModifierKey
+type Key_GLFW = glfw.Key
+type ModifierKey_GLFW = glfw.ModifierKey
 
 const (
-	KeyUnknown = glfw.KeyUnknown
-	KeyEscape  = glfw.KeyEscape
-	KeyEnter   = glfw.KeyEnter
-	KeyInsert  = glfw.KeyInsert
-	KeyF12     = glfw.KeyF12
+	KeyUnknown_GLFW = glfw.KeyUnknown
+	KeyEscape_GLFW  = glfw.KeyEscape
+	KeyEnter_GLFW   = glfw.KeyEnter
+	KeyInsert_GLFW  = glfw.KeyInsert
+	KeyF12_GLFW     = glfw.KeyF12
 )
 
-var KeyToStringLUT = map[glfw.Key]string{
+var KeyToStringLUT_GLFW = map[glfw.Key]string{
 	glfw.KeyEnter:        "RETURN",
 	glfw.KeyEscape:       "ESCAPE",
 	glfw.KeyBackspace:    "BACKSPACE",
@@ -146,29 +146,29 @@ var KeyToStringLUT = map[glfw.Key]string{
 	glfw.KeyRightSuper:   "RGUI",
 }
 
-var StringToKeyLUT = map[string]glfw.Key{}
+var StringToKeyLUT_GLFW = map[string]glfw.Key{}
 
 func init() {
-	for k, v := range KeyToStringLUT {
-		StringToKeyLUT[v] = k
+	for k, v := range KeyToStringLUT_GLFW {
+		StringToKeyLUT_GLFW[v] = k
 	}
 }
 
-func StringToKey(s string) glfw.Key {
-	if key, ok := StringToKeyLUT[s]; ok {
+func StringToKey_GLFW(s string) glfw.Key {
+	if key, ok := StringToKeyLUT_GLFW[s]; ok {
 		return key
 	}
 	return glfw.KeyUnknown
 }
 
-func KeyToString(k glfw.Key) string {
-	if s, ok := KeyToStringLUT[k]; ok {
+func KeyToString_GLFW(k glfw.Key) string {
+	if s, ok := KeyToStringLUT_GLFW[k]; ok {
 		return s
 	}
 	return ""
 }
 
-func NewModifierKey(ctrl, alt, shift bool) (mod glfw.ModifierKey) {
+func NewModifierKey_GLFW(ctrl, alt, shift bool) (mod glfw.ModifierKey) {
 	if ctrl {
 		// Convert Ctrl to Command (⌘) key for macOS if user prefers it
 		if runtime.GOOS == "darwin" && sys.cfg.Debug.MacOSUseCommandKey {
@@ -186,7 +186,7 @@ func NewModifierKey(ctrl, alt, shift bool) (mod glfw.ModifierKey) {
 	return
 }
 
-var input = Input{
+var input_glfw = Input_GLFW{
 	joystick: []glfw.Joystick{glfw.Joystick1, glfw.Joystick2, glfw.Joystick3,
 		glfw.Joystick4, glfw.Joystick5, glfw.Joystick6, glfw.Joystick7,
 		glfw.Joystick8, glfw.Joystick9, glfw.Joystick10, glfw.Joystick11,
@@ -194,7 +194,7 @@ var input = Input{
 		glfw.Joystick16},
 }
 
-func (input *Input) UpdateGamepadMappings(path string) {
+func (input *Input_GLFW) UpdateGamepadMappings(path string) {
 	b, err := os.ReadFile(path)
 	if err != nil {
 		sys.errLog.Printf("%v", err)
@@ -203,46 +203,46 @@ func (input *Input) UpdateGamepadMappings(path string) {
 	glfw.UpdateGamepadMappings(string(b))
 }
 
-func (input *Input) GetMaxJoystickCount() int {
+func (input *Input_GLFW) GetMaxJoystickCount() int {
 	return len(input.joystick)
 }
 
-func (input *Input) IsJoystickPresent(joy int) bool {
+func (input *Input_GLFW) IsJoystickPresent(joy int) bool {
 	if joy < 0 || joy >= len(input.joystick) {
 		return false
 	}
 	return input.joystick[joy].Present()
 }
 
-func (input *Input) GetJoystickName(joy int) string {
+func (input *Input_GLFW) GetJoystickName(joy int) string {
 	if joy < 0 || joy >= len(input.joystick) {
 		return ""
 	}
 	return input.joystick[joy].GetGamepadName()
 }
 
-func (input *Input) GetJoystickAxes(joy int) []float32 {
+func (input *Input_GLFW) GetJoystickAxes(joy int) []float32 {
 	if joy < 0 || joy >= len(input.joystick) {
 		return []float32{}
 	}
 	return input.joystick[joy].GetAxes()
 }
 
-func (input *Input) GetJoystickButtons(joy int) []glfw.Action {
+func (input *Input_GLFW) GetJoystickButtons(joy int) []glfw.Action {
 	if joy < 0 || joy >= len(input.joystick) {
 		return []glfw.Action{}
 	}
 	return input.joystick[joy].GetButtons()
 }
 
-func (input *Input) GetJoystickGUID(joy int) string {
+func (input *Input_GLFW) GetJoystickGUID(joy int) string {
 	if joy < 0 || joy >= len(input.joystick) {
 		return ""
 	}
 	return input.joystick[joy].GetGUID()
 }
 
-func (input *Input) GetJoystickIndices(guid string) []int {
+func (input *Input_GLFW) GetJoystickIndices(guid string) []int {
 	if guid != "" {
 		numIdenticalJoyFound := 0
 		identicalJoys := make([]int, input.GetMaxJoystickCount())
@@ -266,7 +266,7 @@ func (input *Input) GetJoystickIndices(guid string) []int {
 }
 
 // From @leonkasovan's branch
-func CheckAxisForDpad(joy int, axes *[]float32, base int) string {
+func CheckAxisForDpad_GLFW(joy int, axes *[]float32, base int) string {
 	var s string = ""
 	if (*axes)[0] > sys.cfg.Input.ControllerStickSensitivity { // right
 		s = strconv.Itoa(2 + base)
@@ -286,7 +286,7 @@ func CheckAxisForDpad(joy int, axes *[]float32, base int) string {
 }
 
 // Adapted from @leonkasovan's branch (GLFW controllers are handled slightly differently depending on OS)
-func CheckAxisForTrigger(joy int, axes *[]float32) string {
+func CheckAxisForTrigger_GLFW(joy int, axes *[]float32) string {
 	var s string = ""
 	for i := range *axes {
 		if (*axes)[i] < -sys.cfg.Input.ControllerStickSensitivity {

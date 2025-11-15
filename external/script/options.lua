@@ -101,7 +101,7 @@ options.t_itemname = {
 	end,
 	--Port Change
 	['portchange'] = function(t, item, cursorPosY, moveTxt)
-		if main.f_input(main.t_players, {'$F', '$B', 'pal', 's'}) then
+		if main.f_input(main.t_players, {'$F', '$B', 'LS_X-', 'LS_X+', 'pal', 's'}) then
 			sndPlay(motif.files.snd_data, motif.option_info.cursor_move_snd[1], motif.option_info.cursor_move_snd[2])
 			local port = main.f_drawInput(
 				main.f_extractText(motif.option_info.textinput_port_text),
@@ -124,7 +124,7 @@ options.t_itemname = {
 	end,
 	--Default Values
 	['default'] = function(t, item, cursorPosY, moveTxt)
-		if main.f_input(main.t_players, {'$F', '$B', 'pal', 's'}) then
+		if main.f_input(main.t_players, {'$F', '$B', 'LS_X-', 'LS_X+', 'pal', 's'}) then
 			sndPlay(motif.files.snd_data, motif.option_info.cursor_done_snd[1], motif.option_info.cursor_done_snd[2])
 			--modifyGameOption('Common.Air', {"data/common.air"})
 			--modifyGameOption('Common.Cmd', {"data/common.cmd"})
@@ -260,12 +260,12 @@ options.t_itemname = {
 	end,
 	--Difficulty Level
 	['difficulty'] = function(t, item, cursorPosY, moveTxt)
-		if main.f_input(main.t_players, {'$F'}) and gameOption('Options.Difficulty') < 8 then
+		if main.f_input(main.t_players, {'$F', 'LS_X+'}) and gameOption('Options.Difficulty') < 8 then
 			sndPlay(motif.files.snd_data, motif.option_info.cursor_move_snd[1], motif.option_info.cursor_move_snd[2])
 			modifyGameOption('Options.Difficulty', gameOption('Options.Difficulty') + 1)
 			t.items[item].vardisplay = gameOption('Options.Difficulty')
 			options.modified = true
-		elseif main.f_input(main.t_players, {'$B'}) and gameOption('Options.Difficulty') > 1 then
+		elseif main.f_input(main.t_players, {'$B', 'LS_X-'}) and gameOption('Options.Difficulty') > 1 then
 			sndPlay(motif.files.snd_data, motif.option_info.cursor_move_snd[1], motif.option_info.cursor_move_snd[2])
 			modifyGameOption('Options.Difficulty', gameOption('Options.Difficulty') - 1)
 			t.items[item].vardisplay = gameOption('Options.Difficulty')
@@ -275,12 +275,12 @@ options.t_itemname = {
 	end,
 	--Time Limit
 	['roundtime'] = function(t, item, cursorPosY, moveTxt)
-		if main.f_input(main.t_players, {'$F'}) and gameOption('Options.Time') < 1000 then
+		if main.f_input(main.t_players, {'$F', 'LS_X+'}) and gameOption('Options.Time') < 1000 then
 			sndPlay(motif.files.snd_data, motif.option_info.cursor_move_snd[1], motif.option_info.cursor_move_snd[2])
 			modifyGameOption('Options.Time', gameOption('Options.Time') + 1)
 			t.items[item].vardisplay = gameOption('Options.Time')
 			options.modified = true
-		elseif main.f_input(main.t_players, {'$B'}) and gameOption('Options.Time') > -1 then
+		elseif main.f_input(main.t_players, {'$B', 'LS_X-'}) and gameOption('Options.Time') > -1 then
 			sndPlay(motif.files.snd_data, motif.option_info.cursor_move_snd[1], motif.option_info.cursor_move_snd[2])
 			modifyGameOption('Options.Time', gameOption('Options.Time') - 1)
 			t.items[item].vardisplay = options.f_definedDisplay(gameOption('Options.Time'), {[-1] = motif.option_info.menu_valuename_none}, gameOption('Options.Time'))
@@ -290,10 +290,10 @@ options.t_itemname = {
 	end,
 	--Language Setting
 	['language'] = function(t, item, cursorPosY, moveTxt)
-		if main.f_input(main.t_players, {'$F'}) then
+		if main.f_input(main.t_players, {'$F', 'LS_X+'}) then
 			changeLanguageSetting(0)
 			t.items[item].vardisplay = motif.languages[gameOption('Config.Language')] or gameOption('Config.Language')
-		elseif main.f_input(main.t_players, {'$B'}) then
+		elseif main.f_input(main.t_players, {'$B', 'LS_X-'}) then
 			changeLanguageSetting(-2)
 			t.items[item].vardisplay = motif.languages[gameOption('Config.Language')] or gameOption('Config.Language')
 		end
@@ -301,12 +301,12 @@ options.t_itemname = {
 	end,
 	--Life
 	['lifemul'] = function(t, item, cursorPosY, moveTxt)
-		if main.f_input(main.t_players, {'$F'}) and gameOption('Options.Life') < 300 then
+		if main.f_input(main.t_players, {'$F', 'LS_X+'}) and gameOption('Options.Life') < 300 then
 			sndPlay(motif.files.snd_data, motif.option_info.cursor_move_snd[1], motif.option_info.cursor_move_snd[2])
 			modifyGameOption('Options.Life', gameOption('Options.Life') + 10)
 			t.items[item].vardisplay = gameOption('Options.Life') .. '%'
 			options.modified = true
-		elseif main.f_input(main.t_players, {'$B'}) and gameOption('Options.Life') > 10 then
+		elseif main.f_input(main.t_players, {'$B', 'LS_X-'}) and gameOption('Options.Life') > 10 then
 			sndPlay(motif.files.snd_data, motif.option_info.cursor_move_snd[1], motif.option_info.cursor_move_snd[2])
 			modifyGameOption('Options.Life', gameOption('Options.Life') - 10)
 			t.items[item].vardisplay = gameOption('Options.Life') .. '%'
@@ -316,12 +316,12 @@ options.t_itemname = {
 	end,
 	--Single VS Team Life
 	['singlevsteamlife'] = function(t, item, cursorPosY, moveTxt)
-		if main.f_input(main.t_players, {'$F'}) and gameOption('Options.Team.SingleVsTeamLife') < 300 then
+		if main.f_input(main.t_players, {'$F', 'LS_X+'}) and gameOption('Options.Team.SingleVsTeamLife') < 300 then
 			sndPlay(motif.files.snd_data, motif.option_info.cursor_move_snd[1], motif.option_info.cursor_move_snd[2])
 			modifyGameOption('Options.Team.SingleVsTeamLife', gameOption('Options.Team.SingleVsTeamLife') + 10)
 			t.items[item].vardisplay = gameOption('Options.Team.SingleVsTeamLife') .. '%'
 			options.modified = true
-		elseif main.f_input(main.t_players, {'$B'}) and gameOption('Options.Team.SingleVsTeamLife') > 10 then
+		elseif main.f_input(main.t_players, {'$B', 'LS_X-'}) and gameOption('Options.Team.SingleVsTeamLife') > 10 then
 			sndPlay(motif.files.snd_data, motif.option_info.cursor_move_snd[1], motif.option_info.cursor_move_snd[2])
 			modifyGameOption('Options.Team.SingleVsTeamLife', gameOption('Options.Team.SingleVsTeamLife') - 10)
 			t.items[item].vardisplay = gameOption('Options.Team.SingleVsTeamLife') .. '%'
@@ -1449,7 +1449,7 @@ function options.f_createMenu(tbl, bool_main)
 			else
 				main.f_menuCommonDraw(t, item, cursorPosY, moveTxt, 'option_info', 'optionbgdef', options.txt_title, motif.defaultOptions, {})
 			end
-			cursorPosY, moveTxt, item = main.f_menuCommonCalc(t, item, cursorPosY, moveTxt, 'option_info', {'$U'}, {'$D'})
+			cursorPosY, moveTxt, item = main.f_menuCommonCalc(t, item, cursorPosY, moveTxt, 'option_info', {'$U', 'LS_Y-'}, {'$D', 'LS_Y+'})
 			options.txt_title:update({text = tbl.title})
 			if main.close and not main.fadeActive then
 				main.f_bgReset(motif[main.background].bg)
@@ -1679,6 +1679,9 @@ options.t_vardisplay = {
 	['roundtime'] = function()
 		return options.f_definedDisplay(gameOption('Options.Time'), {[-1] = motif.option_info.menu_valuename_none}, gameOption('Options.Time'))
 	end,
+	['rumble'] = function(player)
+		return options.f_boolDisplay(gameOption('Joystick_P' .. player .. '.RumbleOn'))
+	end,
 	['sfxvolume'] = function()
 		return gameOption('Sound.WavVolume') .. '%'
 	end,
@@ -1722,9 +1725,13 @@ options.t_vardisplay = {
 
 -- Returns setting value rendered alongside menu item name (calls appropriate
 -- function from t_vardisplay table)
-function options.f_vardisplay(itemname)
+function options.f_vardisplay(itemname, player)
 	if options.t_vardisplay[itemname] ~= nil then
-		return options.t_vardisplay[itemname]()
+		if itemname == 'rumble' then
+			return options.t_vardisplay[itemname](player)
+		else
+			return options.t_vardisplay[itemname]()
+		end
 	end
 	return ''
 end
@@ -1897,6 +1904,7 @@ function options.f_start()
 			end
 			--appending the menu table
 			if j == 1 then --first string after menu.itemname (either reserved one or custom submenu assignment)
+				if c == 'rumble' then print("WHAT THE FUUUUUUUUUUUUCK\n") end
 				if options.menu.submenu[c] == nil or c == 'empty' then
 					options.menu.submenu[c] = {title = main.f_itemnameUpper(motif.option_info['menu_itemname_' .. suffix], motif.option_info.menu_title_uppercase == 1), submenu = {}, items = {}}
 					options.menu.submenu[c].loop = options.f_createMenu(options.menu.submenu[c], false)
@@ -1907,7 +1915,7 @@ function options.f_start()
 							displayname = motif.option_info['menu_itemname_' .. suffix],
 							paramname = 'menu_itemname_' .. suffix,
 							vardata = text:create({window = t_menuWindow}),
-							vardisplay = options.f_vardisplay(c),
+							vardisplay = c == 'rumble' and options.f_vardisplay(c, i) or options.f_vardisplay(c),
 							selected = false,
 						})
 						table.insert(options.t_vardisplayPointers, options.menu.items[#options.menu.items])
@@ -1917,6 +1925,7 @@ function options.f_start()
 				t_pos.name = c
 			else --following strings
 				if t_pos.submenu[c] == nil or c == 'empty' then
+					if c == 'rumble' then print("WHAT THE FUUUUUUUUUUUUUUUUUUUUUUCK\n") end
 					t_pos.submenu[c] = {title = main.f_itemnameUpper(motif.option_info['menu_itemname_' .. suffix], motif.option_info.menu_title_uppercase == 1), submenu = {}, items = {}}
 					t_pos.submenu[c].loop = options.f_createMenu(t_pos.submenu[c], false)
 					table.insert(t_pos.items, {
@@ -1969,6 +1978,7 @@ local t_keyCfg = {
 	{data = f_keyCfgText(), itemname = 'D', displayname = motif.option_info.keymenu_itemname_d, vardata = f_keyCfgText()},
 	{data = f_keyCfgText(), itemname = 'W', displayname = motif.option_info.keymenu_itemname_w, vardata = f_keyCfgText()},
 	{data = f_keyCfgText(), itemname = 'Menu', displayname = motif.option_info.keymenu_itemname_menu, vardata = f_keyCfgText()},
+	{data = f_keyCfgText(), itemname = 'Rumble', displayname = motif.option_info.keymenu_itemname_rumble, vardata = f_keyCfgText()},
 	{data = f_keyCfgText(), itemname = 'page', displayname = '', infodata = f_keyCfgText(), infodisplay = ''},
 }
 t_keyCfg = main.f_tableClean(t_keyCfg, main.f_tableExists(main.t_sort.option_info).keymenu)
@@ -2086,6 +2096,8 @@ function options.f_keyCfgReset(cfgType)
 				if btn ~= tostring(motif.option_info.menu_valuename_nokey) then --if button is not disabled
 					t_keyList[c.Joystick][btn] = (t_keyList[c.Joystick][btn] or 0) + 1
 				end
+			elseif v.itemname == 'Rumble' then
+				t_keyCfg[k]['vardisplay' .. i] = options.f_boolDisplay(c.RumbleOn)
 			end
 		end
 	end
@@ -2166,22 +2178,22 @@ function options.f_keyCfg(cfgType, controller, bgdef, skipClear)
 			local tmp = getJoystickKey(joyNum)
 			local guid = getJoystickGUID(joyNum)
 
-			-- Fix the GUID so that configs are preserved between boots for macOS
-			if gameOption(cfgType .. '_P' .. player .. '.GUID') ~= guid and guid ~= '' then
-				modifyGameOption(cfgType .. '_P' .. player .. '.GUID', guid)
-				options.modified = true
-			end
+			-- Fix the joystick index so that configs are preserved between boots for macOS
+			-- if gameOption(cfgType .. '_P' .. player .. '.GUID') ~= guid and guid ~= '' then
+			-- 	modifyGameOption(cfgType .. '_P' .. player .. '.GUID', guid)
+			-- 	print('METAPOD: ID = ' .. guid .. '\n')
+			-- 	options.modified = true
+			-- end
 
-			if tonumber(tmp) == nil then
+			if tmp == '' then
 				btnReleased = true
 			elseif btnReleased then
 				key = tmp
 				btnReleased = false
 			end
-			key = tostring(key)
 		end
 		--other keyboard or gamepad key
-		if key ~= '' then
+		if key ~= '' and key ~= 'nil' then
 			if key == 'SPACE' then
 				sndPlay(motif.files.snd_data, motif.option_info.cursor_move_snd[1], motif.option_info.cursor_move_snd[2])
 				--decrease old button count
@@ -2194,7 +2206,7 @@ function options.f_keyCfg(cfgType, controller, bgdef, skipClear)
 				t[item]['vardisplay' .. player] = motif.option_info.menu_valuename_nokey
 				modifyGameOption(cfgType .. '_P' .. player .. '.' .. t[item].itemname, tostring(motif.option_info.menu_valuename_nokey))
 				options.modified = true
-			elseif cfgType == 'Keys' or (cfgType == 'Joystick' and tonumber(key) ~= nil) then
+			elseif cfgType == 'Keys' or (cfgType == 'Joystick' and key ~= nil and key ~= 'nil') then
 				sndPlay(motif.files.snd_data, motif.option_info.cursor_move_snd[1], motif.option_info.cursor_move_snd[2])
 				--decrease old button count
 				if t_keyList[joyNum][btn] ~= nil and t_keyList[joyNum][btn] > 1 then
@@ -2300,14 +2312,32 @@ function options.f_keyCfg(cfgType, controller, bgdef, skipClear)
 			side = main.f_playerSide(player)
 			joyNum = gameOption(cfgType .. '_P' .. player .. '.Joystick')
 		--move up / down
-		elseif main.f_input(main.t_players, {'$U', '$D'}) then
+		elseif main.f_input(main.t_players, {'$U', '$D', 'LS_Y-', 'LS_Y+'}) then
 			sndPlay(motif.files.snd_data, motif.option_info.cursor_move_snd[1], motif.option_info.cursor_move_snd[2])
 			if cursorPosY == item_start then
-				cursorPosY = #t
-				item = #t
+				if main.f_input(main.t_players, {'$D', 'LS_Y+'}) then
+					cursorPosY = #t-1
+					item = #t-1
+				else
+					cursorPosY = #t
+					item = #t
+				end
+			elseif cursorPosY == #t-1 then
+				if main.f_input(main.t_players, {'$D', 'LS_Y-'}) then
+					cursorPosY = #t
+					item = #t
+				else
+					cursorPosY = item_start
+					item = item_start
+				end
 			else
-				cursorPosY = item_start
-				item = item_start
+				if main.f_input(main.t_players, {'$D', 'LS_Y-'}) then
+					cursorPosY = item_start
+					item = item_start
+				else
+					cursorPosY = cursorPosY - 1
+					item = cursorPosY
+				end
 			end
 		--Config all
 		elseif t[item].itemname == 'configall' or key:match('^F[0-9]+$') then
@@ -2333,6 +2363,16 @@ function options.f_keyCfg(cfgType, controller, bgdef, skipClear)
 					btnReleased = false
 					configall = true
 				end
+			end
+		-- Rumble toggle
+		elseif t[item].itemname == 'Rumble' then
+			if main.f_input(main.t_players, {'pal', 's'}) then
+				sndPlay(motif.files.snd_data, motif.option_info.cursor_done_snd[1], motif.option_info.cursor_done_snd[2])
+				local rgo = cfgType .. '_P' .. player .. '.RumbleOn'
+				local rumble = gameOption(rgo)
+				modifyGameOption(rgo, not rumble)
+				options.f_keyCfgReset(cfgType)
+				options.modified = true
 			end
 		end
 		resetKey()

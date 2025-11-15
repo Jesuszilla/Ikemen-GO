@@ -5213,6 +5213,29 @@ func (c *Compiler) roundTimeSet(is IniSection, sc *StateControllerBase, _ int8) 
 	return *ret, err
 }
 
+func (c *Compiler) rumbleController(is IniSection, sc *StateControllerBase, _ int8) (StateController, error) {
+	ret, err := (*rumbleController)(sc), c.stateSec(is, func() error {
+		if err := c.paramValue(is, sc, "redirectid",
+			rumbleController_redirectid, VT_Int, 1, false); err != nil {
+			return err
+		}
+		if err := c.paramValue(is, sc, "lo",
+			rumbleController_lo, VT_Int, 1, false); err != nil {
+			return err
+		}
+		if err := c.paramValue(is, sc, "hi",
+			rumbleController_hi, VT_Int, 1, false); err != nil {
+			return err
+		}
+		if err := c.paramValue(is, sc, "time",
+			rumbleController_time, VT_Int, 1, false); err != nil {
+			return err
+		}
+		return nil
+	})
+	return *ret, err
+}
+
 func (c *Compiler) saveFile(is IniSection, sc *StateControllerBase, _ int8) (StateController, error) {
 	ret, err := (*saveFile)(sc), c.stateSec(is, func() error {
 		if err := c.paramValue(is, sc, "redirectid",

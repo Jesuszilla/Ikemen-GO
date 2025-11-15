@@ -16,8 +16,8 @@ import (
 	"unsafe"
 
 	vk "github.com/Eiton/vulkan"
-	glfw "github.com/go-gl/glfw/v3.3/glfw"
 	mgl "github.com/go-gl/mathgl/mgl32"
+	"github.com/veandco/go-sdl2/sdl"
 )
 
 var vkDebug bool
@@ -906,6 +906,8 @@ type VulkanModelProgramUniformBufferObject2 struct {
 	modelAdd                    [3]float32
 	_padding2                   uint32
 	modelMult                   [3]float32
+	_padding3                   float32
+	neg                         uint32
 }
 type VulkanShadowMapProgramUniformBufferObject0 struct {
 	lightMatrices [24][16]float32
@@ -985,10 +987,10 @@ type VulkanModelSpecializationConstants1 struct {
 	_padding2               [3]bool
 	useEmissionMap          bool
 	_padding3               [3]bool
-	neg                     bool
-	_padding4               [3]bool
-	useShadowMap            bool
-	_padding5               [3]bool
+	// neg                     bool
+	_padding4    [3]bool
+	useShadowMap bool
+	_padding5    [3]bool
 }
 
 const VulkanVertUniformSize = int(unsafe.Sizeof(VulkanSpriteProgramVertUniformBufferObject{}))
@@ -1101,9 +1103,9 @@ func (r *Renderer_VK) GetName() string {
 
 func (r *Renderer_VK) NewVulkanDevice(appInfo *vk.ApplicationInfo, window uintptr) error {
 	// create a Vulkan instance.
-	instanceExtensions := sys.window.GetRequiredInstanceExtensions()
+	instanceExtensions := sys.window.Window.VulkanGetInstanceExtensions()
 	for i := range instanceExtensions {
-		instanceExtensions[i] = instanceExtensions[i] + "\x00"
+		instanceExtensions[i] = fmt.Sprintf("%s\x00", instanceExtensions[i])
 	}
 	instanceCreateInfo := &vk.InstanceCreateInfo{
 		SType:                   vk.StructureTypeInstanceCreateInfo,
@@ -1113,12 +1115,13 @@ func (r *Renderer_VK) NewVulkanDevice(appInfo *vk.ApplicationInfo, window uintpt
 		EnabledLayerCount:       0,
 		PpEnabledLayerNames:     []string{},
 	}
-	if runtime.GOOS == "darwin" {
-		instanceExtensions = append(instanceExtensions, vk.KhrPortabilityEnumerationExtensionName+"\x00")
-		instanceCreateInfo.PpEnabledExtensionNames = instanceExtensions
-		instanceCreateInfo.EnabledExtensionCount += 1
-		instanceCreateInfo.Flags = vk.InstanceCreateFlags(vk.InstanceCreateEnumeratePortabilityBit)
-	}
+	// This causes a crash with it in SDL and without it in GLFW on macOS. Have no idea why.
+	// if runtime.GOOS == "darwin" {
+	// 	instanceExtensions = append(instanceExtensions, vk.KhrPortabilityEnumerationExtensionName+"\x00")
+	// 	instanceCreateInfo.PpEnabledExtensionNames = instanceExtensions
+	// 	instanceCreateInfo.EnabledExtensionCount = uint32(len(instanceExtensions))
+	// 	instanceCreateInfo.Flags = vk.InstanceCreateFlags(vk.InstanceCreateEnumeratePortabilityBit)
+	// }
 	vkDebug = sys.cfg.Video.RendererDebugMode
 	if vkDebug {
 		if r.checkValidationLayerSupport() {
@@ -1137,14 +1140,14 @@ func (r *Renderer_VK) NewVulkanDevice(appInfo *vk.ApplicationInfo, window uintpt
 	r.instance = instance
 	vk.InitInstance(r.instance)
 
-	surface, err := sys.window.CreateWindowSurface(r.instance, nil)
+	surface, err := sys.window.VulkanCreateSurface(r.instance)
 	if err != nil {
 		vk.DestroyInstance(r.instance, nil)
 		err = fmt.Errorf("vkCreateWindowSurface failed with %s", err)
 		return err
 	}
 
-	r.surface = vk.SurfaceFromPointer(surface)
+	r.surface = vk.SurfaceFromPointer(uintptr(surface))
 
 	if r.gpuDevices, err = r.getPhysicalDevices(r.instance); err != nil {
 		r.gpuDevices = nil
@@ -1620,6 +1623,15 @@ func (r *Renderer_VK) CreateSwapchain() error {
 	chosenFormat := -1
 	for i := 0; i < int(formatCount); i++ {
 		formats[i].Deref()
+		// PRIORITY 1: Look for the sRGB format (R8G8B8A8_SRGB or B8G8R8A8_SRGB)
+		// This is the format that performs automatic gamma correction, matching OpenGL's behavior.
+		if formats[i].Format == vk.FormatB8g8r8a8Srgb || formats[i].Format == vk.FormatR8g8b8a8Srgb {
+			chosenFormat = i
+			print("FUCK HORSES\n")
+			break // Found the ideal format, stop searching
+		}
+
+		// Priority 2: Fallback
 		if formats[i].Format == vk.FormatB8g8r8a8Unorm || formats[i].Format == vk.FormatR8g8b8a8Unorm {
 			chosenFormat = i
 			break
@@ -4686,13 +4698,24 @@ func (r *Renderer_VK) Init() {
 	r.stagingImageCopyRegions = make(map[vk.Image][]vk.BufferImageCopy)
 	r.VKState.VulkanModelPipelineState.VulkanModelSpecializationConstants1.useShadowMap = r.enableShadow
 	r.setVSync = false
-
-	vk.SetGetInstanceProcAddr(glfw.GetVulkanGetInstanceProcAddress())
+	vk.SetGetInstanceProcAddr(sdl.VulkanGetVkGetInstanceProcAddr())
 	err := vk.Init()
 	if err != nil {
 		panic(err)
 	}
-	err = r.NewVulkanDevice(appInfo, uintptr(sys.window.Handle()))
+	wminfo, _ := sys.window.GetWMInfo()
+	var osWindowHandle uintptr
+
+	switch wminfo.Subsystem {
+	case sdl.SYSWM_COCOA:
+		osWindowHandle = uintptr(wminfo.GetCocoaInfo().Window)
+	case sdl.SYSWM_WINDOWS:
+		osWindowHandle = uintptr(wminfo.GetWindowsInfo().Window)
+	case sdl.SYSWM_X11:
+		x11WinID := wminfo.GetX11Info().Window
+		osWindowHandle = uintptr(x11WinID)
+	}
+	err = r.NewVulkanDevice(appInfo, osWindowHandle)
 	if err != nil {
 		if len(r.gpuDevices) > 0 {
 			r.PrintInfo()
@@ -4849,10 +4872,11 @@ func (r *Renderer_VK) DestroyResources(queueLength int) {
 
 func (r *Renderer_VK) BeginFrame(clearColor bool) {
 	sys.absTickCountF++
-	now := glfw.GetTime()
+	now := sdl.GetPerformanceCounter()
 	firstFrame := sys.prevTimestamp == 0
-	if now-sys.prevTimestamp >= 1 {
-		sys.gameFPS = sys.absTickCountF / float32(now-sys.prevTimestamp)
+	diff := float32(now - sys.prevTimestamp)
+	if diff*float32(sdl.GetPerformanceFrequency()) >= 1 {
+		sys.gameFPS = float32(sdl.GetPerformanceFrequency()) / diff
 		sys.absTickCountF = 0
 		sys.prevTimestamp = now
 	}
@@ -5118,7 +5142,7 @@ func (r *Renderer_VK) EndFrame() {
 	vk.CmdBindVertexBuffers(r.commandBuffers[0], 0, 1, []vk.Buffer{r.vertexBuffers[bufferIndex].buffer}, []vk.DeviceSize{0})
 
 	//TextureSize, CurrentTime
-	pushConstants := [3]float32{float32(r.renderTargets[0].texture.width), float32(r.renderTargets[0].texture.height), float32(glfw.GetTime())}
+	pushConstants := [3]float32{float32(r.renderTargets[0].texture.width), float32(r.renderTargets[0].texture.height), float32(sdl.GetPerformanceCounter())}
 	vk.CmdPushConstants(r.commandBuffers[0], r.postProcessingProgram.pipelineLayout, vk.ShaderStageFlags(vk.ShaderStageVertexBit|vk.ShaderStageFragmentBit), 0, 4*3, unsafe.Pointer(&pushConstants[0]))
 
 	for i := 0; i < len(r.postProcessingProgram.pipelines)-1; i++ {
@@ -5703,7 +5727,11 @@ func (r *Renderer_VK) SetModelUniformI(name string, val int) {
 		r.VKState.VulkanModelProgramUniformBufferObject1.unlit = val != 0
 		break
 	case "neg":
-		r.VKState.VulkanModelSpecializationConstants1.neg = val != 0
+		if val != 0 {
+			r.VKState.VulkanModelProgramUniformBufferObject2.neg = 1
+		} else {
+			r.VKState.VulkanModelProgramUniformBufferObject2.neg = 0
+		}
 		break
 	case "enableAlpha":
 		r.VKState.VulkanModelProgramUniformBufferObject1.enableAlpha = val != 0

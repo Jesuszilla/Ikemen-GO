@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	glfw "github.com/go-gl/glfw/v3.3/glfw"
+	"github.com/veandco/go-sdl2/sdl"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -115,6 +115,7 @@ type GameState struct {
 	projs      [MaxPlayerNo][]*Projectile
 	explods    [MaxPlayerNo][]*Explod
 	aiInput    [MaxPlayerNo]AiInput
+	ffbParams  [MaxPlayerNo]ForceFeedbackParams
 	inputRemap [MaxPlayerNo]int
 	charList   CharList
 
@@ -233,7 +234,7 @@ type GameState struct {
 	playBgmFlg      bool
 
 	// Input
-	keyInput  glfw.Key
+	keyInput  sdl.Keycode
 	keyString string
 
 	// LifeBar
@@ -406,6 +407,7 @@ func (gs *GameState) LoadState(stateID int) {
 	sys.reloadFlg = gs.reloadFlg
 	sys.reloadStageFlg = gs.reloadStageFlg
 	sys.reloadLifebarFlg = gs.reloadLifebarFlg
+	sys.ffbparams = gs.ffbParams
 
 	sys.match = gs.match
 	sys.round = gs.round
@@ -617,6 +619,7 @@ func (gs *GameState) SaveState(stateID int) {
 	gs.reloadFlg = sys.reloadFlg
 	gs.reloadStageFlg = sys.reloadStageFlg
 	gs.reloadLifebarFlg = sys.reloadLifebarFlg
+	gs.ffbParams = sys.ffbparams
 
 	gs.match = sys.match
 	gs.round = sys.round

@@ -176,6 +176,7 @@ func newCompiler() *Compiler {
 		"rootvarset":           c.rootVarSet,
 		"roundtimeadd":         c.roundTimeAdd,
 		"roundtimeset":         c.roundTimeSet,
+		"rumblecontroller":     c.rumbleController,
 		"savefile":             c.saveFile,
 		"savestate":            c.saveState,
 		"scoreadd":             c.scoreAdd,
@@ -357,6 +358,7 @@ var triggerMap = map[string]int{
 	"ailevelf":           1,
 	"airjumpcount":       1,
 	"alpha":              1,
+	"analog":             1,
 	"angle":              1,
 	"xangle":             1,
 	"yangle":             1,
@@ -1683,6 +1685,34 @@ func (c *Compiler) expValue(out *BytecodeExp, in *string,
 		out.append(OC_ailevel)
 	case "alive":
 		out.append(OC_alive)
+	case "analog":
+		if err := c.checkOpeningParenthesis(in); err != nil {
+			return bvNone(), err
+		}
+
+		switch c.token {
+		case "leftx":
+			opc = OC_ex2_analog_leftx
+		case "lefty":
+			opc = OC_ex2_analog_lefty
+		case "rightx":
+			opc = OC_ex2_analog_rightx
+		case "righty":
+			opc = OC_ex2_analog_righty
+		case "lefttrigger":
+			opc = OC_ex2_analog_lefttrigger
+		case "righttrigger":
+			opc = OC_ex2_analog_righttrigger
+		default:
+			return bvNone(), Error(fmt.Sprintf("Invalid Analog axis: %s", c.token))
+		}
+
+		c.token = c.tokenizer(in)
+
+		if err := c.checkClosingParenthesis(); err != nil {
+			return bvNone(), err
+		}
+		out.append(OC_ex2_, opc)
 	case "anim":
 		out.append(OC_anim)
 	case "animelemno":

@@ -9,6 +9,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/veandco/go-sdl2/sdl"
 )
 
 var ModAlt ModifierKey
@@ -105,7 +107,22 @@ func NewShortcutKey(key Key, ctrl, alt, shift bool) *ShortcutKey {
 }
 
 func (sk ShortcutKey) Test(k Key, m ModifierKey) bool {
-	return k == sk.Key && (m&ModCtrlAltShift) == sk.Mod
+	trgtMods := sk.Mod & ModCtrlAltShift
+	var expandCurr sdl.Keymod
+	if (m & sdl.KMOD_GUI) != 0 {
+		expandCurr |= sdl.KMOD_GUI
+	}
+	if (m & sdl.KMOD_CTRL) != 0 {
+		expandCurr |= sdl.KMOD_CTRL
+	}
+	if (m & sdl.KMOD_ALT) != 0 {
+		expandCurr |= sdl.KMOD_ALT
+	}
+	if (m & sdl.KMOD_SHIFT) != 0 {
+		expandCurr |= sdl.KMOD_SHIFT
+	}
+
+	return k == sk.Key && trgtMods == expandCurr
 }
 
 func OnKeyReleased(key Key, mk ModifierKey) {
@@ -245,7 +262,7 @@ func JoystickState(joy, button int) bool {
 // This is now called only once instead of per button
 // Note: Joystick axes cannot be assigned to buttons, only directions
 // TODO: Maybe an even better solution would be to poll keyboard and joysticks in the same place once per frame then use that cache
-func ControllerState(kc KeyConfig) [14]bool {
+func GetControllerState(kc KeyConfig) [14]bool {
 	var out [14]bool
 	joy := kc.Joy
 
@@ -284,45 +301,57 @@ func ControllerState(kc KeyConfig) [14]bool {
 	}
 
 	// Convert axes polling results to bools
-	getDir := func(axisIdx int, sign float32, btnIdx int) bool {
+	getDir := func(axisIdx int, btnIdx int) bool {
 		// Check axes normally
-		if axisIdx >= 0 && axisIdx < len(axes) {
-			if sign*axes[axisIdx] > sys.cfg.Input.ControllerStickSensitivity {
+		switch axisIdx {
+		case 0: // LX
+			if -axes[axisIdx] > sys.cfg.Input.ControllerStickSensitivity && btnIdx == 16 {
+				return true
+			} else if axes[axisIdx] > sys.cfg.Input.ControllerStickSensitivity && btnIdx == 17 {
+				return true
+			}
+		case 1: // LY
+			if -axes[axisIdx] > sys.cfg.Input.ControllerStickSensitivity && btnIdx == 15 {
+				return true
+			} else if axes[axisIdx] > sys.cfg.Input.ControllerStickSensitivity && btnIdx == 18 {
+				return true
+			}
+		case 2: // RX
+			if -axes[axisIdx] > sys.cfg.Input.ControllerStickSensitivity && btnIdx == 22 {
+				return true
+			} else if axes[axisIdx] > sys.cfg.Input.ControllerStickSensitivity && btnIdx == 23 {
+				return true
+			}
+		case 3: // RY
+			if -axes[axisIdx] > sys.cfg.Input.ControllerStickSensitivity && btnIdx == 21 {
+				return true
+			} else if axes[axisIdx] > sys.cfg.Input.ControllerStickSensitivity && btnIdx == 24 {
+				return true
+			}
+		case 4: // LT
+			if axes[axisIdx] > sys.cfg.Input.XinputTriggerSensitivity && btnIdx == 19 {
+				return true
+			}
+		case 5: // RT
+			if axes[axisIdx] > sys.cfg.Input.XinputTriggerSensitivity && btnIdx == 20 {
 				return true
 			}
 		}
-
-		// Fallback: override even if button index is OOB
-		if len(axes) > 0 {
-			switch btnIdx {
-			case kc.dL:
-				if -axes[0] > sys.cfg.Input.ControllerStickSensitivity {
-					return true
-				}
-			case kc.dR:
-				if axes[0] > sys.cfg.Input.ControllerStickSensitivity {
-					return true
-				}
-			case kc.dU:
-				if len(axes) > 1 && -axes[1] > sys.cfg.Input.ControllerStickSensitivity {
-					return true
-				}
-			case kc.dD:
-				if len(axes) > 1 && axes[1] > sys.cfg.Input.ControllerStickSensitivity {
-					return true
-				}
-			}
-		}
+		// if axisIdx >= 0 && axisIdx < len(axes) {
+		// 	if sign*axes[axisIdx] > sys.cfg.Input.ControllerStickSensitivity {
+		// 		return true
+		// 	}
+		// }
 
 		// Fallback to buttons
 		return getBtn(btnIdx)
 	}
 
 	// Directions
-	out[0] = getDir(1, -1, kc.dU)
-	out[1] = getDir(1, +1, kc.dD)
-	out[2] = getDir(0, -1, kc.dL)
-	out[3] = getDir(0, +1, kc.dR)
+	out[0] = getDir(1, kc.dU) || getDir(3, kc.dU)
+	out[1] = getDir(1, kc.dD) || getDir(3, kc.dD)
+	out[2] = getDir(0, kc.dL) || getDir(2, kc.dL)
+	out[3] = getDir(0, kc.dR) || getDir(2, kc.dR)
 
 	// Buttons
 	out[4] = getBtn(kc.kA)
@@ -338,19 +367,22 @@ func ControllerState(kc KeyConfig) [14]bool {
 
 	// Negative indices: axes as buttons (triggers)
 	handleAxisBtn := func(axisBtn int) bool {
-		if axisBtn >= 0 {
+		if axisBtn != 19 && axisBtn != 20 {
 			return false
 		}
-		axis := -axisBtn - 1
-		if axis >= len(axes)*2 {
+		var axis int = 4
+		if axisBtn == 20 {
+			axis = 5
+		}
+		if axis >= len(axes) {
 			return false
 		}
 
 		// Read value and invert sign for odd indices
-		val := axes[axis/2] * float32((axis&1)*2-1)
+		val := axes[axis]
 
 		// Evaluate LR triggers on the Xbox 360 controller
-		if (axis == 9 || axis == 11) && (strings.Contains(joyName, "XInput") ||
+		if (axis == 4 || axis == 5) && (strings.Contains(joyName, "XInput") ||
 			strings.Contains(joyName, "X360") ||
 			strings.Contains(joyName, "Xbox Wireless") ||
 			strings.Contains(joyName, "Xbox Elite") ||
@@ -358,11 +390,6 @@ func ControllerState(kc KeyConfig) [14]bool {
 			strings.Contains(joyName, "Xbox Series") ||
 			strings.Contains(joyName, "Xbox Adaptive")) {
 			return val > sys.cfg.Input.XinputTriggerSensitivity
-		}
-
-		// Ignore trigger axis on PS4 (We already have buttons)
-		if (axis >= 6 && axis <= 9) && joyName == "PS4 Controller" {
-			return false
 		}
 
 		return val > sys.cfg.Input.ControllerStickSensitivity
@@ -375,7 +402,7 @@ func ControllerState(kc KeyConfig) [14]bool {
 		kc.kS, kc.kD, kc.kW, kc.kM,
 	}
 	for i, idx := range axisIndices {
-		if idx < 0 {
+		if idx == 19 || idx == 20 {
 			out[i] = handleAxisBtn(idx)
 		}
 	}
@@ -385,58 +412,59 @@ func ControllerState(kc KeyConfig) [14]bool {
 
 type KeyConfig struct {
 	Joy, dU, dD, dL, dR, kA, kB, kC, kX, kY, kZ, kS, kD, kW, kM int
-	GUID                                                        string
 	isInitialized                                               bool
+	rumbleOn                                                    bool
+	GUID                                                        string
 }
 
 func (kc *KeyConfig) swap(kc2 *KeyConfig) {
-	// joy := kc.Joy
-	dD := kc.dD
-	dL := kc.dL
-	dR := kc.dR
-	dU := kc.dU
-	kA := kc.kA
-	kB := kc.kB
-	kC := kc.kC
-	kD := kc.kD
-	kW := kc.kW
-	kX := kc.kX
-	kY := kc.kY
-	kZ := kc.kZ
-	kM := kc.kM
-	kS := kc.kS
+	joy := kc.Joy
+	// dD := kc.dD
+	// dL := kc.dL
+	// dR := kc.dR
+	// dU := kc.dU
+	// kA := kc.kA
+	// kB := kc.kB
+	// kC := kc.kC
+	// kD := kc.kD
+	// kW := kc.kW
+	// kX := kc.kX
+	// kY := kc.kY
+	// kZ := kc.kZ
+	// kM := kc.kM
+	// kS := kc.kS
 
-	// kc.Joy = kc2.Joy
-	kc.dD = kc2.dD
-	kc.dL = kc2.dL
-	kc.dR = kc2.dR
-	kc.dU = kc2.dU
-	kc.kA = kc2.kA
-	kc.kB = kc2.kB
-	kc.kC = kc2.kC
-	kc.kD = kc2.kD
-	kc.kW = kc2.kW
-	kc.kX = kc2.kX
-	kc.kY = kc2.kY
-	kc.kZ = kc2.kZ
-	kc.kM = kc2.kM
-	kc.kS = kc2.kS
+	kc.Joy = kc2.Joy
+	// kc.dD = kc2.dD
+	// kc.dL = kc2.dL
+	// kc.dR = kc2.dR
+	// kc.dU = kc2.dU
+	// kc.kA = kc2.kA
+	// kc.kB = kc2.kB
+	// kc.kC = kc2.kC
+	// kc.kD = kc2.kD
+	// kc.kW = kc2.kW
+	// kc.kX = kc2.kX
+	// kc.kY = kc2.kY
+	// kc.kZ = kc2.kZ
+	// kc.kM = kc2.kM
+	// kc.kS = kc2.kS
 
-	// kc2.Joy = joy
-	kc2.dD = dD
-	kc2.dL = dL
-	kc2.dR = dR
-	kc2.dU = dU
-	kc2.kA = kA
-	kc2.kB = kB
-	kc2.kC = kC
-	kc2.kD = kD
-	kc2.kW = kW
-	kc2.kX = kX
-	kc2.kY = kY
-	kc2.kZ = kZ
-	kc2.kM = kM
-	kc2.kS = kS
+	kc2.Joy = joy
+	// kc2.dD = dD
+	// kc2.dL = dL
+	// kc2.dR = dR
+	// kc2.dU = dU
+	// kc2.kA = kA
+	// kc2.kB = kB
+	// kc2.kC = kC
+	// kc2.kD = kD
+	// kc2.kW = kW
+	// kc2.kX = kX
+	// kc2.kY = kY
+	// kc2.kZ = kZ
+	// kc2.kM = kM
+	// kc2.kS = kS
 
 	kc.isInitialized = true
 	kc2.isInitialized = true
@@ -549,7 +577,7 @@ func (ir *InputReader) LocalInput(in int, script bool) [14]bool {
 	if in < len(sys.keyConfig) {
 		joy := sys.keyConfig[in].Joy
 		if joy < 0 {
-			buttons := ControllerState(sys.keyConfig[in])
+			buttons := GetControllerState(sys.keyConfig[in])
 			U = buttons[0]
 			D = buttons[1]
 			L = buttons[2]
@@ -587,7 +615,7 @@ func (ir *InputReader) LocalInput(in int, script bool) [14]bool {
 	if in < len(sys.joystickConfig) {
 		joy := sys.joystickConfig[in].Joy
 		if joy >= 0 {
-			buttons := ControllerState(sys.joystickConfig[in])
+			buttons := GetControllerState(sys.joystickConfig[in])
 			U = U || buttons[0] // Does not override keyboard
 			D = D || buttons[1]
 			L = L || buttons[2]
@@ -3212,6 +3240,7 @@ func (cl *CommandList) InputUpdate(owner *Char, controller int, aiLevel float32,
 	isAI := controller < 0
 
 	var buttons [14]bool
+	// var axes *[6]float32
 
 	if isAI {
 		if aijam {
@@ -3220,6 +3249,7 @@ func (cl *CommandList) InputUpdate(owner *Char, controller int, aiLevel float32,
 			if idx >= 0 && idx < len(sys.aiInput) {
 				sys.aiInput[idx].Update(aiLevel)
 				buttons = sys.aiInput[idx].Buttons()
+				owner.analogAxes = &[6]float32{0, 0, 0, 0, 0, 0}
 			}
 		}
 	} else if sys.replayFile != nil {
@@ -3232,6 +3262,11 @@ func (cl *CommandList) InputUpdate(owner *Char, controller int, aiLevel float32,
 		// If not AI, replay, or network, then it's a local human player
 		if controller < len(sys.inputRemap) {
 			buttons = cl.Buffer.InputReader.LocalInput(sys.inputRemap[controller], script)
+			for i, jc := range sys.joystickConfig {
+				if jc.Joy == controller && owner != nil {
+					owner.analogAxes = input.GetJoystickAxes(sys.inputRemap[i])
+				}
+			}
 		}
 	}
 
