@@ -1621,14 +1621,7 @@ func (r *Renderer_VK) CreateSwapchain() error {
 	chosenFormat := -1
 	for i := 0; i < int(formatCount); i++ {
 		formats[i].Deref()
-		// PRIORITY 1: Look for the sRGB format (R8G8B8A8_SRGB or B8G8R8A8_SRGB)
-		// This is the format that performs automatic gamma correction, matching OpenGL's behavior.
-		if formats[i].Format == vk.FormatB8g8r8a8Srgb || formats[i].Format == vk.FormatR8g8b8a8Srgb {
-			chosenFormat = i
-			break // Found the ideal format, stop searching
-		}
 
-		// Priority 2: Fallback
 		if formats[i].Format == vk.FormatB8g8r8a8Unorm || formats[i].Format == vk.FormatR8g8b8a8Unorm {
 			chosenFormat = i
 			break
