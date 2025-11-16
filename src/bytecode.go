@@ -10682,7 +10682,7 @@ func (sc forceFeedback) Run(c *Char, _ []int32) bool {
 	newAPI := false
 	lo := uint16(0)
 	hi := uint16(0)
-	// self := true
+	self := true
 	StateControllerBase(sc).run(c, func(paramID byte, exp []BytecodeExp) bool {
 		switch paramID {
 		case forceFeedback_waveform:
@@ -10726,7 +10726,7 @@ func (sc forceFeedback) Run(c *Char, _ []int32) bool {
 			}
 		// We really don't need this because of redirectID and we have more than 2 players
 		case forceFeedback_self:
-			// self = exp[0].evalB(c)
+			self = exp[0].evalB(c)
 		// New API functions begin below
 		case forceFeedback_lo:
 			newAPI = true
@@ -10737,9 +10737,16 @@ func (sc forceFeedback) Run(c *Char, _ []int32) bool {
 		}
 		if crun.controller >= 0 && crun.controller < len(sys.ffbparams) {
 			joy := crun.controller
-			if newAPI { // New API: just rumble straight away
+			if newAPI { // New API: just rumble straight away on the ultimately redirected character
 				input.RumbleController(sys.inputRemap[sys.joystickConfig[joy].Joy], lo, hi, time)
 			} else { // Old API: fill out FFB params
+				// Do a final redirect to P2 if self defined
+				if !self {
+					if crun = crun.p2(); crun == nil {
+						return false
+					}
+					joy = crun.controller
+				}
 				sys.ffbparams[sys.inputRemap[sys.joystickConfig[joy].Joy]] = ForceFeedbackParams{
 					timer:    time,
 					start:    ampl[0],
