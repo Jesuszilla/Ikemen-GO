@@ -20,7 +20,6 @@ type Window struct {
 func (s *System) newWindow(w, h int) (*Window, error) {
 	var err error
 	var window *sdl.Window
-	// var monitor *sdl.
 
 	// Initialize SDL
 	chk(sdl.Init(sdl.INIT_VIDEO | sdl.INIT_JOYSTICK | sdl.INIT_EVENTS | sdl.INIT_GAMECONTROLLER | sdl.INIT_HAPTIC | sdl.INIT_TIMER))
@@ -56,7 +55,7 @@ func (s *System) newWindow(w, h int) (*Window, error) {
 		windowFlags |= sdl.WINDOW_OPENGL
 	} else {
 		windowFlags |= sdl.WINDOW_VULKAN
-		// Ensure core profile is NOT set for older versions
+		// Ensure core profile is NOT set for Vulkan
 		if err := sdl.GLSetAttribute(sdl.GL_CONTEXT_PROFILE_MASK, 0); err != nil {
 			return nil, err
 		}

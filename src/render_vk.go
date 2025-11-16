@@ -987,10 +987,8 @@ type VulkanModelSpecializationConstants1 struct {
 	_padding2               [3]bool
 	useEmissionMap          bool
 	_padding3               [3]bool
-	// neg                     bool
-	_padding4    [3]bool
-	useShadowMap bool
-	_padding5    [3]bool
+	useShadowMap            bool
+	_padding4               [3]bool
 }
 
 const VulkanVertUniformSize = int(unsafe.Sizeof(VulkanSpriteProgramVertUniformBufferObject{}))
