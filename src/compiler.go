@@ -176,7 +176,6 @@ func newCompiler() *Compiler {
 		"rootvarset":           c.rootVarSet,
 		"roundtimeadd":         c.roundTimeAdd,
 		"roundtimeset":         c.roundTimeSet,
-		"rumblecontroller":     c.rumbleController,
 		"savefile":             c.saveFile,
 		"savestate":            c.saveState,
 		"scoreadd":             c.scoreAdd,

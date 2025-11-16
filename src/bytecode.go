@@ -10663,6 +10663,8 @@ const (
 	forceFeedback_freq
 	forceFeedback_ampl
 	forceFeedback_self
+	forceFeedback_lo
+	forceFeedback_hi
 	forceFeedback_redirectid
 )
 
@@ -10677,6 +10679,9 @@ func (sc forceFeedback) Run(c *Char, _ []int32) bool {
 	time := uint32(60)
 	freq := [4]float32{128, 0, 0, 0}
 	ampl := [4]float32{128, 0, 0, 0}
+	newAPI := false
+	lo := uint16(0)
+	hi := uint16(0)
 	// self := true
 	StateControllerBase(sc).run(c, func(paramID byte, exp []BytecodeExp) bool {
 		switch paramID {
@@ -10722,16 +10727,27 @@ func (sc forceFeedback) Run(c *Char, _ []int32) bool {
 		// We really don't need this because of redirectID and we have more than 2 players
 		case forceFeedback_self:
 			// self = exp[0].evalB(c)
+		// New API functions begin below
+		case forceFeedback_lo:
+			newAPI = true
+			lo = uint16(exp[0].evalI(c))
+		case forceFeedback_hi:
+			newAPI = true
+			hi = uint16(exp[0].evalI(c))
 		}
 		if crun.controller >= 0 && crun.controller < len(sys.ffbparams) {
 			joy := crun.controller
-			sys.ffbparams[sys.inputRemap[sys.joystickConfig[joy].Joy]] = ForceFeedbackParams{
-				timer:    time,
-				start:    ampl[0],
-				d1:       ampl[1],
-				d2:       ampl[2],
-				d3:       ampl[3],
-				waveform: waveform,
+			if newAPI { // New API: just rumble straight away
+				input.RumbleController(sys.inputRemap[sys.joystickConfig[joy].Joy], lo, hi, time)
+			} else { // Old API: fill out FFB params
+				sys.ffbparams[sys.inputRemap[sys.joystickConfig[joy].Joy]] = ForceFeedbackParams{
+					timer:    time,
+					start:    ampl[0],
+					d1:       ampl[1],
+					d2:       ampl[2],
+					d3:       ampl[3],
+					waveform: waveform,
+				}
 			}
 		}
 		return true
@@ -11380,37 +11396,6 @@ func (sc roundTimeSet) Run(c *Char, _ []int32) bool {
 			if sys.maxRoundTime != -1 {
 				sys.curRoundTime = Clamp(exp[0].evalI(c), 0, sys.maxRoundTime)
 			}
-		}
-		return true
-	})
-	return false
-}
-
-type rumbleController StateControllerBase
-
-const (
-	rumbleController_lo byte = iota
-	rumbleController_hi
-	rumbleController_time
-	rumbleController_redirectid
-)
-
-func (sc rumbleController) Run(c *Char, _ []int32) bool {
-	crun := getRedirectedChar(c, StateControllerBase(sc), rumbleController_redirectid, "RumbleController")
-	var hi, lo uint16 = 0, 0
-	var joy int = crun.controller
-	var ticks uint32 = 1
-	StateControllerBase(sc).run(c, func(paramID byte, exp []BytecodeExp) bool {
-		switch paramID {
-		case rumbleController_hi:
-			hi = uint16(exp[0].evalI(c))
-		case rumbleController_lo:
-			lo = uint16(exp[0].evalI(c))
-		case rumbleController_time:
-			ticks = uint32(exp[0].evalI(c))
-		}
-		if joy >= 0 && joy < len(sys.ffbparams) {
-			input.RumbleController(joy, lo, hi, ticks)
 		}
 		return true
 	})
