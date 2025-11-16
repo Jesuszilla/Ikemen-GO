@@ -497,10 +497,8 @@ void main(void) {
 	FragColor = vec4(1.0);
 	if(useTexture){
 		FragColor = COMPAT_TEXTURE(tex, vec2(texTransform*vec3(texcoord,1)));
-		#if __VERSION__ >= 450 
-		// If Vulkan/sRGB swapchain, convert texture to linear space
+		// convert texture to linear space
 		FragColor.rgb = pow(FragColor.rgb,vec3(2.2));
-		#endif
 	}
 	FragColor *= baseColorFactor;
 	FragColor *= vColor;
@@ -524,11 +522,7 @@ void main(void) {
 		
 		// Emission is also added in linear space
 		if(useEmissionMap){
-			#if __VERSION__ >= 450
 			FragColor.rgb += emission * pow(COMPAT_TEXTURE(emissionMap, vec2(emissionMapTransform*vec3(texcoord,1))).rgb,vec3(2.2));
-			#else
-			FragColor.rgb += emission * COMPAT_TEXTURE(emissionMap, vec2(emissionMapTransform*vec3(texcoord,1))).rgb;
-			#endif
 		}else{
 			FragColor.rgb += emission;
 		}
@@ -580,7 +574,5 @@ void main(void) {
 
 	// Final Gamma Correction (Required for Vulkan path rendering to an sRGB target)
 	// This happens *after* all linear operations and re-premultiplication.
-	#if __VERSION__ >= 450
 	FragColor.rgb = pow(FragColor.rgb, vec3(1.0/2.2));
-	#endif
 }
