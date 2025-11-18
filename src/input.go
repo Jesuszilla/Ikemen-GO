@@ -487,7 +487,7 @@ func (kc KeyConfig) w() bool { return JoystickState(kc.Joy, kc.kW) }
 func (kc KeyConfig) m() bool { return JoystickState(kc.Joy, kc.kM) }
 */
 
-type InputBits int32
+type InputBits int16
 
 const (
 	IB_PU InputBits = 1 << iota
@@ -666,6 +666,15 @@ func (ir *InputReader) LocalInput(in int, script bool) [14]bool {
 	}
 
 	return [14]bool{U, D, L, R, a, b, c, x, y, z, s, d, w, m}
+}
+
+func (ir *InputReader) LocalAnalogInput(in int) [6]int16 {
+	joy := sys.joystickConfig[in].Joy
+	if joy < 0 || joy > len(input.controllerstate) {
+		return [6]int16{}
+	}
+
+	return input.controllerstate[joy].Axes
 }
 
 // Resolve Simultaneous Opposing Cardinal Directions (SOCD)
@@ -2029,9 +2038,13 @@ func (c *Command) GreaterCheckFail(i int, ibuf *InputBuffer) bool {
 	return false
 }
 
+// This defines the number of frames to store for the net buffer inputs (digital and analog)
+const NETBUF_NUM_FRAMES int32 = 32
+
 // NetBuffer holds the inputs that are sent between players
 type NetBuffer struct {
-	buf              [32]InputBits
+	buf              [NETBUF_NUM_FRAMES]InputBits
+	axisBuf          [NETBUF_NUM_FRAMES][6]int16
 	curT, inpT, senT int32
 	InputReader      *InputReader
 }
@@ -2049,8 +2062,9 @@ func (nb *NetBuffer) reset(time int32) {
 
 // Convert local player's key inputs into input bits for sending
 func (nb *NetBuffer) writeNetBuffer(in int) {
-	if nb.inpT-nb.curT < 32 {
-		nb.buf[nb.inpT&31].KeysToBits(nb.InputReader.LocalInput(in, false))
+	if nb.inpT-nb.curT < NETBUF_NUM_FRAMES {
+		nb.buf[nb.inpT&(NETBUF_NUM_FRAMES-1)].KeysToBits(nb.InputReader.LocalInput(in, false))
+		nb.axisBuf[nb.inpT&(NETBUF_NUM_FRAMES-1)] = nb.InputReader.LocalAnalogInput(in)
 		nb.inpT++
 	}
 }
@@ -2058,9 +2072,16 @@ func (nb *NetBuffer) writeNetBuffer(in int) {
 // Read input bits from the net buffer
 func (nb *NetBuffer) readNetBuffer() [14]bool {
 	if nb.curT < nb.inpT {
-		return nb.buf[nb.curT&31].BitsToKeys()
+		return nb.buf[nb.curT&(NETBUF_NUM_FRAMES-1)].BitsToKeys()
 	}
 	return [14]bool{}
+}
+
+func (nb *NetBuffer) readNetBufferAnalog() [6]int16 {
+	if nb.curT < nb.inpT {
+		return nb.axisBuf[nb.curT&(NETBUF_NUM_FRAMES-1)]
+	}
+	return [6]int16{}
 }
 
 // NetConnection manages the communication between players
@@ -2227,9 +2248,16 @@ func (nc *NetConnection) readNetInput(i int) [14]bool {
 	return [14]bool{}
 }
 
+func (nc *NetConnection) readNetInputAnalog(i int) [6]int16 {
+	if i >= 0 && i < len(nc.buf) {
+		return nc.buf[sys.inputRemap[i]].readNetBufferAnalog()
+	}
+	return [6]int16{}
+}
+
 func (nc *NetConnection) AnyButton() bool {
 	for _, nb := range nc.buf {
-		if nb.buf[nb.curT&31]&IB_anybutton != 0 {
+		if nb.buf[nb.curT&(NETBUF_NUM_FRAMES-1)]&IB_anybutton != 0 {
 			return true
 		}
 	}
@@ -2255,6 +2283,22 @@ func (nc *NetConnection) end() {
 		nc.st = NS_End
 	}
 	nc.Close()
+}
+
+func (nc *NetConnection) readI16() (int16, error) {
+	b := [2]byte{}
+	if _, err := nc.conn.Read(b[:]); err != nil {
+		return 0, err
+	}
+	return int16(b[0]) | int16(b[1])<<8, nil
+}
+
+func (nc *NetConnection) writeI16(i16 int16) error {
+	b := [...]byte{byte(i16), byte(i16 >> 8)}
+	if _, err := nc.conn.Write(b[:]); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (nc *NetConnection) readI32() (int32, error) {
@@ -2327,30 +2371,47 @@ func (nc *NetConnection) Synchronize() error {
 		defer func() { nc.sendEnd <- true }()
 		for nc.st == NS_Playing {
 			if nb.senT < nb.inpT {
-				if err := nc.writeI32(int32(nb.buf[nb.senT&31])); err != nil {
+				if err := nc.writeI16(int16(nb.buf[nb.senT&(NETBUF_NUM_FRAMES-1)])); err != nil {
 					nc.st = NS_Error
 					return
+				} else {
+					// Write analog data now
+					for j := 0; j < len(nb.axisBuf[nb.senT&(NETBUF_NUM_FRAMES-1)]); j++ {
+						if err = nc.writeI16(nb.axisBuf[nb.senT&(NETBUF_NUM_FRAMES-1)][j]); err != nil {
+							nc.st = NS_Error
+							return
+						}
+					}
 				}
 				nb.senT++
 			}
 			time.Sleep(time.Millisecond)
 		}
-		nc.writeI32(-1)
+		nc.writeI16(-1)
 	}(&nc.buf[nc.locIn])
 	<-nc.recvEnd
 	go func(nb *NetBuffer) {
 		defer func() { nc.recvEnd <- true }()
 		for nc.st == NS_Playing {
-			if nb.inpT-nb.curT < 32 {
-				if tmp, err := nc.readI32(); err != nil {
+			if nb.inpT-nb.curT < NETBUF_NUM_FRAMES {
+				if tmp, err := nc.readI16(); err != nil {
 					nc.st = NS_Error
 					return
 				} else {
-					nb.buf[nb.inpT&31] = InputBits(tmp)
+					nb.buf[nb.inpT&(NETBUF_NUM_FRAMES-1)] = InputBits(tmp)
 					if tmp < 0 {
 						nc.st = NS_Stopped
 						return
 					} else {
+						// Read analog data now
+						for j := 0; j < len(nb.axisBuf[nb.inpT&(NETBUF_NUM_FRAMES-1)]); j++ {
+							if tmp, err = nc.readI16(); err != nil {
+								nc.st = NS_Error
+								return
+							} else {
+								nb.axisBuf[nb.inpT&(NETBUF_NUM_FRAMES-1)][j] = tmp
+							}
+						}
 						nb.inpT++
 						nb.senT = nb.inpT
 					}
@@ -2358,9 +2419,10 @@ func (nc *NetConnection) Synchronize() error {
 			}
 			time.Sleep(time.Millisecond)
 		}
-		for tmp := int32(0); tmp != -1; {
+		// There may be padding for the axis buffer so safest to just change this.
+		for tmp := int16(0); tmp != -1; {
 			var err error
-			if tmp, err = nc.readI32(); err != nil {
+			if tmp, err = nc.readI16(); err != nil {
 				break
 			}
 		}
@@ -2404,7 +2466,8 @@ func (nc *NetConnection) Update() bool {
 				nc.buf[nc.remIn].curT = nc.time
 				if nc.recording != nil {
 					for i := 0; i < MaxSimul*2; i++ {
-						binary.Write(nc.recording, binary.LittleEndian, &nc.buf[i].buf[nc.time&31])
+						binary.Write(nc.recording, binary.LittleEndian, &nc.buf[i].buf[nc.time&(NETBUF_NUM_FRAMES-1)])
+						binary.Write(nc.recording, binary.LittleEndian, &nc.buf[i].axisBuf[nc.time&(NETBUF_NUM_FRAMES-1)])
 					}
 				}
 				nc.time++
@@ -2426,6 +2489,7 @@ func (nc *NetConnection) Update() bool {
 type ReplayFile struct {
 	f      *os.File
 	ibit   [MaxPlayerNo]InputBits
+	iaxes  [MaxPlayerNo][6]int16
 	pmTime int32
 }
 
@@ -2448,6 +2512,18 @@ func (rf *ReplayFile) readReplayFile(i int) [14]bool {
 		return rf.ibit[sys.inputRemap[i]].BitsToKeys()
 	}
 	return [14]bool{}
+}
+
+func (rf *ReplayFile) readReplayFileAnalog(i int) [6]int16 {
+	if i >= 0 && i < len(rf.ibit) {
+		remap := sys.inputRemap[i] // we'll be using this a lot
+
+		// New replay file, read in the axes too
+		if remap >= 0 && remap < len(rf.iaxes) {
+			return rf.iaxes[remap]
+		}
+	}
+	return [6]int16{}
 }
 
 func (rf *ReplayFile) AnyButton() bool {
@@ -2478,12 +2554,33 @@ func (rf *ReplayFile) Update() bool {
 		sys.esc = true
 	} else {
 		if sys.oldNextAddTime > 0 {
+			// Clear everything first
 			for i := range rf.ibit {
 				rf.ibit[i] = 0
 			}
-			err := binary.Read(rf.f, binary.LittleEndian, rf.ibit[:MaxSimul*2])
-			if err != nil {
-				sys.esc = true
+			for i := 0; i < len(rf.iaxes); i++ {
+				for j := 0; j < len(rf.iaxes[i]); j++ {
+					rf.iaxes[i][j] = int16(0)
+				}
+			}
+
+			// Read each player at a time, in the order of digital inputs, followed by each analog axis
+			for i := 0; i < len(rf.iaxes); i++ {
+				err := binary.Read(rf.f, binary.LittleEndian, rf.ibit[i])
+				if err != nil {
+					sys.esc = true
+					break
+				} else {
+					// Now get the analog axes.
+					for j := 0; j < len(rf.iaxes[i]); j++ {
+						err = binary.Read(rf.f, binary.LittleEndian, rf.iaxes[i][j])
+
+						if err != nil {
+							sys.esc = true
+							break
+						}
+					}
+				}
 			}
 		}
 		if sys.esc {
@@ -3240,7 +3337,7 @@ func (cl *CommandList) InputUpdate(owner *Char, controller int, aiLevel float32,
 	isAI := controller < 0
 
 	var buttons [14]bool
-	// var axes *[6]float32
+	var axes [6]float32
 
 	if isAI {
 		if aijam {
@@ -3254,19 +3351,21 @@ func (cl *CommandList) InputUpdate(owner *Char, controller int, aiLevel float32,
 		}
 	} else if sys.replayFile != nil {
 		buttons = sys.replayFile.readReplayFile(controller)
+		rawAxes := sys.replayFile.readReplayFileAnalog(controller)
+		axes = NormalizeAxes(&rawAxes)
 	} else if sys.netConnection != nil {
 		buttons = sys.netConnection.readNetInput(controller)
+		rawAxes := sys.netConnection.readNetInputAnalog(controller)
+		axes = NormalizeAxes(&rawAxes)
 	} else if sys.rollback.session != nil {
 		buttons = sys.rollback.readRollbackInput(controller)
+		rawAxes := sys.rollback.readRollbackInputAnalog(controller)
+		axes = NormalizeAxes(&rawAxes)
 	} else {
 		// If not AI, replay, or network, then it's a local human player
 		if controller < len(sys.inputRemap) {
 			buttons = cl.Buffer.InputReader.LocalInput(sys.inputRemap[controller], script)
-			for i, jc := range sys.joystickConfig {
-				if jc.Joy == controller && owner != nil {
-					owner.analogAxes = input.GetJoystickAxes(sys.inputRemap[i])
-				}
-			}
+			axes = *input.GetJoystickAxes(sys.inputRemap[controller])
 		}
 	}
 
@@ -3351,9 +3450,30 @@ func (cl *CommandList) InputUpdate(owner *Char, controller int, aiLevel float32,
 	// Send final inputs to buffer
 	cl.Buffer.updateInputTime(U, D, L, R, B, F, a, b, c, x, y, z, s, d, w, m)
 
+	// Update analog axes
+	if owner != nil {
+		for i := 0; i < len(axes); i++ {
+			(*owner.analogAxes)[i] = axes[i]
+		}
+	}
+
 	// Decide whether commands should be updated
 	// Normally they should, but script inputs need this check
 	return step
+}
+
+// Normalize from [-32768,32767] to [-1.0,1.0]
+func NormalizeAxes(axes *[6]int16) [6]float32 {
+	const MAX_VALUE float32 = 32768.0
+	normalizedAxes := [6]float32{0, 0, 0, 0, 0, 0}
+	for i := 0; i < len(axes); i++ {
+		if (*axes)[i] < 0 {
+			normalizedAxes[i] = float32((*axes)[i]) / MAX_VALUE
+		} else {
+			normalizedAxes[i] = float32((*axes)[i]) / (MAX_VALUE - 1)
+		}
+	}
+	return normalizedAxes
 }
 
 // Assert commands with a given name for a given time

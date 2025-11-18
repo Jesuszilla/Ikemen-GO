@@ -10,7 +10,7 @@ import (
 )
 
 type ControllerState struct {
-	Axes      [6]float32
+	Axes      [6]int16
 	Buttons   map[sdl.GameControllerButton]byte
 	HasRumble bool
 }
@@ -278,8 +278,8 @@ func (input *Input) GetJoystickAxes(joy int) *[6]float32 {
 	if joy < 0 || joy >= len(input.controllerstate) {
 		return &[6]float32{0, 0, 0, 0, 0, 0}
 	}
-
-	return &input.controllerstate[joy].Axes
+	axes := NormalizeAxes(&input.controllerstate[joy].Axes)
+	return &axes
 }
 
 func (input *Input) GetJoystickButtons(joy int) []byte {

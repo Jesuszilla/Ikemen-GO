@@ -78,6 +78,7 @@ type RollbackSession struct {
 	remotePlayerHandle  ggpo.PlayerHandle
 	loopTimer           LoopTimer
 	inputs              map[int][MaxPlayerNo]InputBits
+	analogInputs        map[int][MaxPlayerNo][6]int16
 	config              RollbackProperties
 	log                 RollbackLogger
 	timestamp           string
@@ -88,13 +89,17 @@ type RollbackSession struct {
 	inRollback          bool
 }
 
-func (rs *RollbackSession) SetInput(time int32, player int, input InputBits) {
+func (rs *RollbackSession) SetInput(time int32, player int, input InputBits, axes [6]int16) {
 	if _, ok := rs.inputs[int(time)]; !ok {
 		rs.inputs[int(time)] = [MaxPlayerNo]InputBits{}
+		rs.analogInputs[int(time)] = [MaxPlayerNo][6]int16{}
 	}
 	inputArr := rs.inputs[int(time)]
+	analogInputs := rs.analogInputs[int(time)]
 	inputArr[player] = input
+	analogInputs[player] = axes
 	rs.inputs[int(time)] = inputArr
+	rs.analogInputs[int(time)] = analogInputs
 }
 
 func (rs *RollbackSession) SaveReplay() {
@@ -128,7 +133,7 @@ func (rs *RollbackSession) SaveReplay() {
 func (rs *RollbackSession) inputToBytes(time int) []byte {
 	buf := []byte{}
 	for i := 0; i < MaxSimul*2+MaxAttachedChar; i++ {
-		buf = append(buf, writeI32(int32(rs.inputs[time][i]))...)
+		buf = append(buf, writeI16(int16(rs.inputs[time][i]))...)
 	}
 	return buf
 }
@@ -268,11 +273,11 @@ func (r *RollbackSession) AdvanceFrame(flags int) {
 	// Get the confirmed inputs from the GGPO backend for the frame being simulated
 	var disconnectFlags int
 	inputs, ggpoerr := r.backend.SyncInput(&disconnectFlags)
-	sys.rollback.ggpoInputs = decodeInputs(inputs)
+	sys.rollback.ggpoInputs, sys.rollback.ggpoAnalogInputs = decodeInputs(inputs)
 
 	if r.recording != nil {
-		r.SetInput(r.netTime, 0, sys.rollback.ggpoInputs[0])
-		r.SetInput(r.netTime, 1, sys.rollback.ggpoInputs[1])
+		r.SetInput(r.netTime, 0, sys.rollback.ggpoInputs[0], sys.rollback.ggpoAnalogInputs[0])
+		r.SetInput(r.netTime, 1, sys.rollback.ggpoInputs[1], sys.rollback.ggpoAnalogInputs[1])
 		r.netTime++
 	}
 
@@ -353,12 +358,13 @@ func NewRollbackSession(config RollbackProperties) RollbackSession {
 	r.log = NewRollbackLogger(r.timestamp)
 	r.replayBuffer = make([][MaxPlayerNo]InputBits, 0)
 	r.inputs = make(map[int][MaxPlayerNo]InputBits)
+	r.analogInputs = make(map[int][MaxPlayerNo][6]int16)
 	return r
 
 }
 
 func encodeInputs(inputs InputBits) []byte {
-	return writeI32(int32(inputs))
+	return writeI16(int16(inputs))
 }
 
 func (rs *RollbackSession) LiveChecksum() uint32 {
@@ -441,7 +447,8 @@ func (rs *RollbackSession) InitP1(numPlayers int, localPort int, remotePort int,
 	}
 
 	var inputBits InputBits = 0
-	var inputSize int = len(encodeInputs(inputBits))
+	var inputAxes [6]int16 = [6]int16{}
+	var inputSize int = len(encodeInputs(inputBits)) + 2*len(inputAxes)
 
 	player := ggpo.NewLocalPlayer(20, 1)
 	player2 := ggpo.NewRemotePlayer(20, 2, remoteIp, remotePort)

@@ -263,11 +263,7 @@ func (w *Window) pollEvents() {
 	for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 		switch t := event.(type) {
 		case sdl.ControllerAxisEvent:
-			if t.Value < 0 {
-				input.controllerstate[t.Which].Axes[t.Axis] = float32(t.Value) / MAX_VALUE
-			} else {
-				input.controllerstate[t.Which].Axes[t.Axis] = float32(t.Value) / (MAX_VALUE - 1)
-			}
+			input.controllerstate[t.Which].Axes[t.Axis] = t.Value
 			// fmt.Printf("system_sdl.go : Axis: %v, Value: %v\n", t.Axis, t.Value)
 		case sdl.ControllerButtonEvent:
 			input.controllerstate[t.Which].Buttons[t.Button] = byte(t.State)
