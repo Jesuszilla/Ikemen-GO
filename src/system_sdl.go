@@ -258,12 +258,22 @@ func (w *Window) toggleFullscreen() {
 	w.fullscreen = !w.fullscreen
 }
 
+func convertI16toI8(val int16) (converted int8) {
+	const INT16_MAX float32 = 32768.0
+	const INT8_MAX float32 = 128.0
+	if val < 0 {
+		return int8((float32(val) / INT16_MAX) * INT8_MAX)
+	} else {
+		return int8((float32(val) / (INT16_MAX - 1)) * (INT8_MAX - 1))
+	}
+}
+
 func (w *Window) pollEvents() {
 	const MAX_VALUE float32 = 32768.0
 	for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 		switch t := event.(type) {
 		case sdl.ControllerAxisEvent:
-			input.controllerstate[t.Which].Axes[t.Axis] = t.Value
+			input.controllerstate[t.Which].Axes[t.Axis] = convertI16toI8(t.Value)
 			// fmt.Printf("system_sdl.go : Axis: %v, Value: %v\n", t.Axis, t.Value)
 		case sdl.ControllerButtonEvent:
 			input.controllerstate[t.Which].Buttons[t.Button] = byte(t.State)

@@ -12,7 +12,7 @@ type RollbackSystem struct {
 	currentFight     Fight
 	netConnection    *NetConnection
 	ggpoInputs       []InputBits
-	ggpoAnalogInputs [][6]int16
+	ggpoAnalogInputs [][6]int8
 }
 
 type RollbackProperties struct {
@@ -32,7 +32,7 @@ func (rs *RollbackSystem) hijackRunMatch(s *System) bool {
 
 	// Reset variables
 	rs.ggpoInputs = make([]InputBits, 2)
-	rs.ggpoAnalogInputs = make([][6]int16, 2)
+	rs.ggpoAnalogInputs = make([][6]int8, 2)
 
 	// Initialize rollback network session and synchronize state
 	rs.preMatchSetup()
@@ -354,16 +354,16 @@ func readI32(b []byte) int32 {
 	return int32(b[0]) | int32(b[1])<<8 | int32(b[2])<<16 | int32(b[3])<<24
 }
 
-func decodeInputs(buffer [][]byte) ([]InputBits, [][6]int16) {
+func decodeInputs(buffer [][]byte) ([]InputBits, [][6]int8) {
 	var inputs = make([]InputBits, len(buffer))
-	var analogInputs = make([][6]int16, len(buffer))
+	var analogInputs = make([][6]int8, len(buffer))
 	for i, b := range buffer {
 		inputs[i] = InputBits(readI16(b))
 		for j := 0; j < len(analogInputs[i]); j++ {
-			if len(b) < 14 {
+			if len(b) < 8 {
 				analogInputs[i][j] = 0
 			} else {
-				analogInputs[i][j] = readI16(b[(2 + (j * 2)):(4 + (j * 2))])
+				analogInputs[i][j] = int8(b[2+j])
 			}
 		}
 	}
@@ -387,9 +387,9 @@ func (rs *RollbackSystem) getInputs(player int) []byte {
 	bytes := writeI16(int16(ib))
 
 	// Analog inputs
-	shortAxes := rs.netConnection.buf[player].InputReader.LocalAnalogInput(0)
-	for i := 0; i < len(shortAxes); i++ {
-		bytes = append(bytes, writeI16(shortAxes[i])...)
+	sbyteAxes := rs.netConnection.buf[player].InputReader.LocalAnalogInput(0)
+	for i := 0; i < len(sbyteAxes); i++ {
+		bytes = append(bytes, byte(sbyteAxes[i]))
 	}
 
 	return bytes
@@ -408,14 +408,14 @@ func (rs *RollbackSystem) readRollbackInput(controller int) [14]bool {
 	return rs.ggpoInputs[remap].BitsToKeys()
 }
 
-func (rs *RollbackSystem) readRollbackInputAnalog(controller int) [6]int16 {
+func (rs *RollbackSystem) readRollbackInputAnalog(controller int) [6]int8 {
 	if controller < 0 || controller >= len(sys.inputRemap) {
-		return [6]int16{}
+		return [6]int8{}
 	}
 
 	remap := sys.inputRemap[controller]
 	if remap < 0 || remap >= len(rs.ggpoInputs) {
-		return [6]int16{}
+		return [6]int8{}
 	}
 
 	return rs.ggpoAnalogInputs[remap]

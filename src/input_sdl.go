@@ -10,7 +10,7 @@ import (
 )
 
 type ControllerState struct {
-	Axes      [6]int16
+	Axes      [6]int8
 	Buttons   map[sdl.GameControllerButton]byte
 	HasRumble bool
 }

@@ -668,10 +668,10 @@ func (ir *InputReader) LocalInput(in int, script bool) [14]bool {
 	return [14]bool{U, D, L, R, a, b, c, x, y, z, s, d, w, m}
 }
 
-func (ir *InputReader) LocalAnalogInput(in int) [6]int16 {
+func (ir *InputReader) LocalAnalogInput(in int) [6]int8 {
 	joy := sys.joystickConfig[in].Joy
 	if joy < 0 || joy > len(input.controllerstate) {
-		return [6]int16{}
+		return [6]int8{}
 	}
 
 	return input.controllerstate[joy].Axes
@@ -2044,7 +2044,7 @@ const NETBUF_NUM_FRAMES int32 = 32
 // NetBuffer holds the inputs that are sent between players
 type NetBuffer struct {
 	buf              [NETBUF_NUM_FRAMES]InputBits
-	axisBuf          [NETBUF_NUM_FRAMES][6]int16
+	axisBuf          [NETBUF_NUM_FRAMES][6]int8
 	curT, inpT, senT int32
 	InputReader      *InputReader
 }
@@ -2077,11 +2077,11 @@ func (nb *NetBuffer) readNetBuffer() [14]bool {
 	return [14]bool{}
 }
 
-func (nb *NetBuffer) readNetBufferAnalog() [6]int16 {
+func (nb *NetBuffer) readNetBufferAnalog() [6]int8 {
 	if nb.curT < nb.inpT {
 		return nb.axisBuf[nb.curT&(NETBUF_NUM_FRAMES-1)]
 	}
-	return [6]int16{}
+	return [6]int8{}
 }
 
 // NetConnection manages the communication between players
@@ -2248,11 +2248,11 @@ func (nc *NetConnection) readNetInput(i int) [14]bool {
 	return [14]bool{}
 }
 
-func (nc *NetConnection) readNetInputAnalog(i int) [6]int16 {
+func (nc *NetConnection) readNetInputAnalog(i int) [6]int8 {
 	if i >= 0 && i < len(nc.buf) {
 		return nc.buf[sys.inputRemap[i]].readNetBufferAnalog()
 	}
-	return [6]int16{}
+	return [6]int8{}
 }
 
 func (nc *NetConnection) AnyButton() bool {
@@ -2283,6 +2283,22 @@ func (nc *NetConnection) end() {
 		nc.st = NS_End
 	}
 	nc.Close()
+}
+
+func (nc *NetConnection) readI8() (int8, error) {
+	b := [1]byte{}
+	if _, err := nc.conn.Read(b[:]); err != nil {
+		return 0, err
+	}
+	return int8(b[0]), nil
+}
+
+func (nc *NetConnection) writeI8(i8 int8) error {
+	b := [...]byte{byte(i8)}
+	if _, err := nc.conn.Write(b[:]); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (nc *NetConnection) readI16() (int16, error) {
@@ -2377,7 +2393,7 @@ func (nc *NetConnection) Synchronize() error {
 				} else {
 					// Write analog data now
 					for j := 0; j < len(nb.axisBuf[nb.senT&(NETBUF_NUM_FRAMES-1)]); j++ {
-						if err = nc.writeI16(nb.axisBuf[nb.senT&(NETBUF_NUM_FRAMES-1)][j]); err != nil {
+						if err = nc.writeI8(nb.axisBuf[nb.senT&(NETBUF_NUM_FRAMES-1)][j]); err != nil {
 							nc.st = NS_Error
 							return
 						}
@@ -2405,11 +2421,11 @@ func (nc *NetConnection) Synchronize() error {
 					} else {
 						// Read analog data now
 						for j := 0; j < len(nb.axisBuf[nb.inpT&(NETBUF_NUM_FRAMES-1)]); j++ {
-							if tmp, err = nc.readI16(); err != nil {
+							if tmp2, err := nc.readI8(); err != nil {
 								nc.st = NS_Error
 								return
 							} else {
-								nb.axisBuf[nb.inpT&(NETBUF_NUM_FRAMES-1)][j] = tmp
+								nb.axisBuf[nb.inpT&(NETBUF_NUM_FRAMES-1)][j] = tmp2
 							}
 						}
 						nb.inpT++
@@ -2489,7 +2505,7 @@ func (nc *NetConnection) Update() bool {
 type ReplayFile struct {
 	f      *os.File
 	ibit   [MaxPlayerNo]InputBits
-	iaxes  [MaxPlayerNo][6]int16
+	iaxes  [MaxPlayerNo][6]int8
 	pmTime int32
 }
 
@@ -2514,7 +2530,7 @@ func (rf *ReplayFile) readReplayFile(i int) [14]bool {
 	return [14]bool{}
 }
 
-func (rf *ReplayFile) readReplayFileAnalog(i int) [6]int16 {
+func (rf *ReplayFile) readReplayFileAnalog(i int) [6]int8 {
 	if i >= 0 && i < len(rf.ibit) {
 		remap := sys.inputRemap[i] // we'll be using this a lot
 
@@ -2523,7 +2539,7 @@ func (rf *ReplayFile) readReplayFileAnalog(i int) [6]int16 {
 			return rf.iaxes[remap]
 		}
 	}
-	return [6]int16{}
+	return [6]int8{}
 }
 
 func (rf *ReplayFile) AnyButton() bool {
@@ -2560,7 +2576,7 @@ func (rf *ReplayFile) Update() bool {
 			}
 			for i := 0; i < len(rf.iaxes); i++ {
 				for j := 0; j < len(rf.iaxes[i]); j++ {
-					rf.iaxes[i][j] = int16(0)
+					rf.iaxes[i][j] = int8(0)
 				}
 			}
 
@@ -3463,8 +3479,8 @@ func (cl *CommandList) InputUpdate(owner *Char, controller int, aiLevel float32,
 }
 
 // Normalize from [-32768,32767] to [-1.0,1.0]
-func NormalizeAxes(axes *[6]int16) [6]float32 {
-	const MAX_VALUE float32 = 32768.0
+func NormalizeAxes(axes *[6]int8) [6]float32 {
+	const MAX_VALUE float32 = 128.0
 	normalizedAxes := [6]float32{0, 0, 0, 0, 0, 0}
 	for i := 0; i < len(axes); i++ {
 		if (*axes)[i] < 0 {

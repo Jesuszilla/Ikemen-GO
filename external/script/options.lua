@@ -2238,7 +2238,7 @@ function options.f_keyCfg(cfgType, controller, bgdef, skipClear)
 			--move to the next position
 			item = item + 1
 			cursorPosY = cursorPosY + 1
-			if item > #t or t[item].itemname == 'page' then
+			if item > #t or t[item].itemname == 'page' or t[item].itemname == 'Rumble' then
 				item = item_start
 				cursorPosY = item_start
 				configall = false
