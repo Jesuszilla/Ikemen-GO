@@ -365,16 +365,22 @@ func GetControllerState(kc KeyConfig) [14]bool {
 	out[12] = getBtn(kc.kW)
 	out[13] = getBtn(kc.kM)
 
-	// Negative indices: axes as buttons (triggers)
+	// axes as buttons
 	handleAxisBtn := func(axisBtn int) bool {
-		if axisBtn != 19 && axisBtn != 20 {
-			return false
-		}
-		var axis int = 4
-		if axisBtn == 20 {
+		var axis int = 0
+		if axisBtn == 16 || axisBtn == 17 { // LS_X
+			axis = 0
+		} else if axisBtn == 15 || axisBtn == 18 { // LS_Y
+			axis = 1
+		} else if axisBtn == 22 || axisBtn == 23 { // RS_X
+			axis = 2
+		} else if axisBtn == 21 || axisBtn == 24 { // RS_Y
+			axis = 3
+		} else if axisBtn == 19 { // LT
+			axis = 4
+		} else if axisBtn == 20 { // RT
 			axis = 5
-		}
-		if axis >= len(axes) {
+		} else { // Invalid
 			return false
 		}
 
@@ -392,7 +398,11 @@ func GetControllerState(kc KeyConfig) [14]bool {
 			return val > sys.cfg.Input.XinputTriggerSensitivity
 		}
 
-		return val > sys.cfg.Input.ControllerStickSensitivity
+		if val < 0 {
+			return -val > sys.cfg.Input.ControllerStickSensitivity
+		} else {
+			return val > sys.cfg.Input.ControllerStickSensitivity
+		}
 	}
 
 	// Apply axis button logic
@@ -402,7 +412,7 @@ func GetControllerState(kc KeyConfig) [14]bool {
 		kc.kS, kc.kD, kc.kW, kc.kM,
 	}
 	for i, idx := range axisIndices {
-		if idx == 19 || idx == 20 {
+		if idx >= 15 && idx <= 24 {
 			out[i] = handleAxisBtn(idx)
 		}
 	}
