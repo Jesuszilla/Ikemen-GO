@@ -95,20 +95,20 @@ main.t_defaultKeysMapping = {
 }
 
 main.t_defaultJoystickMapping = {
-	Up = '10',
-	Down = '12',
-	Left = '13',
-	Right = '11',
-	A = '0',
-	B = '1',
-	C = '5',
-	X = '2',
-	Y = '3',
-	Z = '-12',
-	Start = '7',
-	D = '4',
-	W = '-10',
-	Menu = '6',
+	Up = 'DP_U',
+	Down = 'DP_D',
+	Left = 'DP_L',
+	Right = 'DP_R',
+	A = 'A',
+	B = 'B',
+	C = 'RT',
+	X = 'X',
+	Y = 'Y',
+	Z = 'RB',
+	Start = 'START',
+	D = 'LB',
+	W = 'LT',
+	Menu = 'BACK',
 }
 
 --prepare players/command tables
