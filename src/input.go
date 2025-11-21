@@ -293,77 +293,11 @@ func GetControllerState(kc KeyConfig) [14]bool {
 
 	axes := input.GetJoystickAxes(joy)
 	btns := input.GetJoystickButtons(joy)
-	joyName := input.GetJoystickName(joy)
 
 	// Convert button polling results to bools
 	getBtn := func(idx int) bool {
 		return idx >= 0 && idx < len(btns) && btns[idx] != 0
 	}
-
-	// Convert axes polling results to bools
-	getDir := func(axisIdx int, btnIdx int) bool {
-		// Check axes normally
-		switch axisIdx {
-		case 0: // LX
-			if -axes[axisIdx] > sys.cfg.Input.ControllerStickSensitivity && btnIdx == 16 {
-				return true
-			} else if axes[axisIdx] > sys.cfg.Input.ControllerStickSensitivity && btnIdx == 17 {
-				return true
-			}
-		case 1: // LY
-			if -axes[axisIdx] > sys.cfg.Input.ControllerStickSensitivity && btnIdx == 15 {
-				return true
-			} else if axes[axisIdx] > sys.cfg.Input.ControllerStickSensitivity && btnIdx == 18 {
-				return true
-			}
-		case 2: // RX
-			if -axes[axisIdx] > sys.cfg.Input.ControllerStickSensitivity && btnIdx == 22 {
-				return true
-			} else if axes[axisIdx] > sys.cfg.Input.ControllerStickSensitivity && btnIdx == 23 {
-				return true
-			}
-		case 3: // RY
-			if -axes[axisIdx] > sys.cfg.Input.ControllerStickSensitivity && btnIdx == 21 {
-				return true
-			} else if axes[axisIdx] > sys.cfg.Input.ControllerStickSensitivity && btnIdx == 24 {
-				return true
-			}
-		case 4: // LT
-			if axes[axisIdx] > sys.cfg.Input.XinputTriggerSensitivity && btnIdx == 19 {
-				return true
-			}
-		case 5: // RT
-			if axes[axisIdx] > sys.cfg.Input.XinputTriggerSensitivity && btnIdx == 20 {
-				return true
-			}
-		}
-		// if axisIdx >= 0 && axisIdx < len(axes) {
-		// 	if sign*axes[axisIdx] > sys.cfg.Input.ControllerStickSensitivity {
-		// 		return true
-		// 	}
-		// }
-
-		// Fallback to buttons
-		return getBtn(btnIdx)
-	}
-
-	// Directions
-	out[0] = getDir(1, kc.dU) || getDir(3, kc.dU)
-	out[1] = getDir(1, kc.dD) || getDir(3, kc.dD)
-	out[2] = getDir(0, kc.dL) || getDir(2, kc.dL)
-	out[3] = getDir(0, kc.dR) || getDir(2, kc.dR)
-
-	// Buttons
-	out[4] = getBtn(kc.kA)
-	out[5] = getBtn(kc.kB)
-	out[6] = getBtn(kc.kC)
-	out[7] = getBtn(kc.kX)
-	out[8] = getBtn(kc.kY)
-	out[9] = getBtn(kc.kZ)
-	out[10] = getBtn(kc.kS)
-	out[11] = getBtn(kc.kD)
-	out[12] = getBtn(kc.kW)
-	out[13] = getBtn(kc.kM)
 
 	// axes as buttons
 	handleAxisBtn := func(axisBtn int) bool {
@@ -388,20 +322,16 @@ func GetControllerState(kc KeyConfig) [14]bool {
 		val := axes[axis]
 
 		// Evaluate LR triggers on the Xbox 360 controller
-		if (axis == 4 || axis == 5) && (strings.Contains(joyName, "XInput") ||
-			strings.Contains(joyName, "X360") ||
-			strings.Contains(joyName, "Xbox Wireless") ||
-			strings.Contains(joyName, "Xbox Elite") ||
-			strings.Contains(joyName, "Xbox One") ||
-			strings.Contains(joyName, "Xbox Series") ||
-			strings.Contains(joyName, "Xbox Adaptive")) {
+		if axis == 4 || axis == 5 {
 			return val > sys.cfg.Input.XinputTriggerSensitivity
 		}
 
-		if val < 0 {
+		if val < 0 && (axisBtn == 15 || axisBtn == 16 || axisBtn == 21 || axisBtn == 22) {
 			return -val > sys.cfg.Input.ControllerStickSensitivity
-		} else {
+		} else if axisBtn == 17 || axisBtn == 18 || axisBtn == 23 || axisBtn == 24 {
 			return val > sys.cfg.Input.ControllerStickSensitivity
+		} else {
+			return false
 		}
 	}
 
@@ -414,6 +344,8 @@ func GetControllerState(kc KeyConfig) [14]bool {
 	for i, idx := range axisIndices {
 		if idx >= 15 && idx <= 24 {
 			out[i] = handleAxisBtn(idx)
+		} else {
+			out[i] = getBtn(idx)
 		}
 	}
 

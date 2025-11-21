@@ -216,9 +216,7 @@ function main.f_input(p, b)
 			elseif btn == 'LS_X-' or btn == 'LS_X+' or btn == 'LS_Y-' or btn == 'LS_Y+' or
 					btn == 'RS_X-' or btn == 'RS_X+' or btn == 'RS_Y-' or btn == 'RS_Y+' or
 					btn == 'LT' or btn == 'RT' then
-				-- Need to remap for training selection or analog will not respond
-				local remap = gamemode('training') and pn == 2 and main.t_remaps[pn] or pn
-				local key = getJoystickKey(remap)
+				local key = getJoystickKey(pn)
 				local stickIsNeutral = (key == nil or key == '')
 				-- Handle analog axes
 				if stickIsNeutral then
