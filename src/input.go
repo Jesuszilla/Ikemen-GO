@@ -259,9 +259,9 @@ func JoystickState(joy, button int) bool {
 */
 
 // Checks keyboard and/or joystick input states
-// This is now called only once instead of per button
-// Note: Joystick axes cannot be assigned to buttons, only directions
-// TODO: Maybe an even better solution would be to poll keyboard and joysticks in the same place once per frame then use that cache
+// This is now called only once instead of per button and retrieves
+// values from a shared state for both buttons and axes.
+// All XInput axes and diigtal buttons are supported.
 func GetControllerState(kc KeyConfig) [14]bool {
 	var out [14]bool
 	joy := kc.Joy
@@ -317,8 +317,6 @@ func GetControllerState(kc KeyConfig) [14]bool {
 		} else { // Invalid
 			return false
 		}
-
-		// Read value and invert sign for odd indices
 		val := axes[axis]
 
 		// Evaluate LR triggers on the Xbox 360 controller
