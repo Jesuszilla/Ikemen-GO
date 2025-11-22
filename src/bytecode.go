@@ -10735,30 +10735,30 @@ func (sc forceFeedback) Run(c *Char, _ []int32) bool {
 			newAPI = true
 			hi = uint16(exp[0].evalI(c))
 		}
-		if crun.controller >= 0 && crun.controller < len(sys.ffbparams) {
-			joy := crun.controller
-			if newAPI { // New API: just rumble straight away on the ultimately redirected character
-				input.RumbleController(sys.inputRemap[sys.joystickConfig[joy].Joy], lo, hi, time)
-			} else { // Old API: fill out FFB params
-				// Do a final redirect to P2 if self defined
-				if !self {
-					if crun = crun.p2(); crun == nil {
-						return false
-					}
-					joy = crun.controller
-				}
-				sys.ffbparams[sys.inputRemap[sys.joystickConfig[joy].Joy]] = ForceFeedbackParams{
-					timer:    time,
-					start:    ampl[0],
-					d1:       ampl[1],
-					d2:       ampl[2],
-					d3:       ampl[3],
-					waveform: waveform,
-				}
-			}
-		}
 		return true
 	})
+	if crun.controller >= 0 && crun.controller < len(sys.ffbparams) {
+		joy := crun.controller
+		if newAPI { // New API: just rumble straight away on the ultimately redirected character
+			input.RumbleController(sys.inputRemap[sys.joystickConfig[joy].Joy], lo, hi, time)
+		} else { // Old API: fill out FFB params
+			// Do a final redirect to P2 if self defined
+			if !self {
+				if crun = crun.p2(); crun == nil {
+					return false
+				}
+				joy = crun.controller
+			}
+			sys.ffbparams[sys.inputRemap[sys.joystickConfig[joy].Joy]] = ForceFeedbackParams{
+				timer:    time,
+				start:    ampl[0],
+				d1:       ampl[1],
+				d2:       ampl[2],
+				d3:       ampl[3],
+				waveform: waveform,
+			}
+		}
+	}
 	return false
 }
 

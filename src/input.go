@@ -261,7 +261,7 @@ func JoystickState(joy, button int) bool {
 // Checks keyboard and/or joystick input states
 // This is now called only once instead of per button and retrieves
 // values from a shared state for both buttons and axes.
-// All XInput axes and diigtal buttons are supported.
+// All XInput axes and digital buttons are supported.
 func GetControllerState(kc KeyConfig) [14]bool {
 	var out [14]bool
 	joy := kc.Joy

@@ -1774,7 +1774,7 @@ func systemScriptInit(l *lua.LState) {
 		var s string
 		var joy, min, max int = 0, 0, input.GetMaxJoystickCount()
 		if !nilArg(l, 1) {
-			min = int(Clamp(int32(numArg(l, 1)), 0, int32(max-1)))
+			min = int(Clamp(int32(numArg(l, 1))-1, 0, int32(max-1))) // need to offset because Lua is 1-indexed
 			max = min + 1
 		}
 		for joy = min; joy < max; joy++ {
