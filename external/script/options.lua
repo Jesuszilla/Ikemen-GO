@@ -2176,12 +2176,11 @@ function options.f_keyCfg(cfgType, controller, bgdef, skipClear)
 			local tmp = getJoystickKey(joyNum)
 			local guid = getJoystickGUID(joyNum)
 
-			-- Fix the joystick index so that configs are preserved between boots for macOS
-			-- if gameOption(cfgType .. '_P' .. player .. '.GUID') ~= guid and guid ~= '' then
-			-- 	modifyGameOption(cfgType .. '_P' .. player .. '.GUID', guid)
-			-- 	print('METAPOD: ID = ' .. guid .. '\n')
-			-- 	options.modified = true
-			-- end
+			-- Fix the joystick index so that configs are preserved between boots
+			if gameOption(cfgType .. '_P' .. player .. '.GUID') ~= guid and guid ~= '' then
+				modifyGameOption(cfgType .. '_P' .. player .. '.GUID', guid)
+				options.modified = true
+			end
 
 			if tmp == '' then
 				btnReleased = true

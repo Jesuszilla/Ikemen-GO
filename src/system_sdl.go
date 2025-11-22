@@ -316,7 +316,7 @@ func (w *Window) pollEvents() {
 						if sys.joystickConfig[joyS].GUID != guid && !sys.joystickConfig[joyS].isInitialized {
 							// Swap those that don't match
 							for i := 0; i < len(sys.joystickConfig); i++ {
-								if i != joyS && sys.joystickConfig[i].GUID == guid {
+								if sys.joystickConfig[i].Joy != joyS && sys.joystickConfig[i].GUID == guid {
 									sys.joystickConfig[joyS].swap(&sys.joystickConfig[i])
 									sys.inputRemap[joyS] = i
 									sys.inputRemap[i] = joyS

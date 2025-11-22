@@ -227,7 +227,7 @@ function main.f_input(p, b)
 						main.analogDeadTime = main.analogDeadTime - 1
 					end
 
-					if key == btn and main.analogDeadTime == 0 then
+					if key == btn and main.analogDeadTime == 0 and key ~= main.lastAxis then
 						main.playerInput = pn
 						main.analogDeadTime = ANALOG_DEAD_TIME
 						main.lastAxis = key
