@@ -134,12 +134,7 @@ func (w *Window) imageToSurface(img image.Image) (*sdl.Surface, error) {
 	rgba := image.NewRGBA(bounds)
 	draw.Draw(rgba, bounds, img, bounds.Min, draw.Src)
 
-	var format uint32
-	if runtime.GOOS == "darwin" {
-		format = uint32(sdl.PIXELFORMAT_ABGR8888)
-	} else {
-		format = uint32(sdl.PIXELFORMAT_ARGB8888)
-	}
+	var format uint32 = uint32(sdl.PIXELFORMAT_ABGR8888)
 
 	surface, err := sdl.CreateRGBSurfaceWithFormat(
 		0,
