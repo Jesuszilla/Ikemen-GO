@@ -291,8 +291,8 @@ func GetControllerState(kc KeyConfig) [14]bool {
 		return out
 	}
 
-	axes := input.GetJoystickAxes(joy)
-	btns := input.GetJoystickButtons(joy)
+	axes := input.GetJoystickAxes(sys.inputRemap[joy])
+	btns := input.GetJoystickButtons(sys.inputRemap[joy])
 
 	// Convert button polling results to bools
 	getBtn := func(idx int) bool {
@@ -533,22 +533,6 @@ func (ir *InputReader) LocalInput(in int, script bool) [14]bool {
 			w = buttons[12]
 			m = buttons[13]
 		}
-		/*
-			U = sys.keyConfig[in].U()
-			D = sys.keyConfig[in].D()
-			L = sys.keyConfig[in].L()
-			R = sys.keyConfig[in].R()
-			a = sys.keyConfig[in].a()
-			b = sys.keyConfig[in].b()
-			c = sys.keyConfig[in].c()
-			x = sys.keyConfig[in].x()
-			y = sys.keyConfig[in].y()
-			z = sys.keyConfig[in].z()
-			s = sys.keyConfig[in].s()
-			d = sys.keyConfig[in].d()
-			w = sys.keyConfig[in].w()
-			m = sys.keyConfig[in].m()
-		*/
 	}
 
 	// Joystick
@@ -572,28 +556,6 @@ func (ir *InputReader) LocalInput(in int, script bool) [14]bool {
 			m = m || buttons[13]
 		}
 	}
-
-	/*
-		if in < len(sys.joystickConfig) {
-			joyS := sys.joystickConfig[in].Joy
-			if joyS >= 0 {
-				U = U || sys.joystickConfig[in].U() // Does not override keyboard
-				D = D || sys.joystickConfig[in].D()
-				L = L || sys.joystickConfig[in].L()
-				R = R || sys.joystickConfig[in].R()
-				a = a || sys.joystickConfig[in].a()
-				b = b || sys.joystickConfig[in].b()
-				c = c || sys.joystickConfig[in].c()
-				x = x || sys.joystickConfig[in].x()
-				y = y || sys.joystickConfig[in].y()
-				z = z || sys.joystickConfig[in].z()
-				s = s || sys.joystickConfig[in].s()
-				d = d || sys.joystickConfig[in].d()
-				w = w || sys.joystickConfig[in].w()
-				m = m || sys.joystickConfig[in].m()
-			}
-		}
-	*/
 
 	// Button assist is checked locally so that the sent inputs are already processed
 	if sys.cfg.Input.ButtonAssist {
@@ -3302,7 +3264,7 @@ func (cl *CommandList) InputUpdate(owner *Char, controller int, aiLevel float32,
 			if idx >= 0 && idx < len(sys.aiInput) {
 				sys.aiInput[idx].Update(aiLevel)
 				buttons = sys.aiInput[idx].Buttons()
-				owner.analogAxes = &[6]float32{0, 0, 0, 0, 0, 0}
+				owner.analogAxes = [6]float32{0, 0, 0, 0, 0, 0}
 			}
 		}
 	} else if sys.replayFile != nil {
@@ -3321,7 +3283,7 @@ func (cl *CommandList) InputUpdate(owner *Char, controller int, aiLevel float32,
 		// If not AI, replay, or network, then it's a local human player
 		if controller < len(sys.inputRemap) {
 			buttons = cl.Buffer.InputReader.LocalInput(sys.inputRemap[controller], script)
-			axes = *input.GetJoystickAxes(sys.inputRemap[controller])
+			axes = input.GetJoystickAxes(sys.joystickConfig[controller].Joy)
 		}
 	}
 
@@ -3409,7 +3371,7 @@ func (cl *CommandList) InputUpdate(owner *Char, controller int, aiLevel float32,
 	// Update analog axes
 	if owner != nil {
 		for i := 0; i < len(axes); i++ {
-			(*owner.analogAxes)[i] = axes[i]
+			owner.analogAxes[i] = axes[i]
 		}
 	}
 

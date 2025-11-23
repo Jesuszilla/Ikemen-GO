@@ -1782,11 +1782,11 @@ func systemScriptInit(l *lua.LState) {
 				axes := input.GetJoystickAxes(joy)
 				btns := input.GetJoystickButtons(joy)
 
-				s = CheckAxisForDpad(axes, len(btns))
+				s = CheckAxisForDpad(&axes, len(btns))
 				if s != "" {
 					break
 				}
-				s = CheckAxisForTrigger(axes)
+				s = CheckAxisForTrigger(&axes)
 				if s != "" {
 					break
 				}

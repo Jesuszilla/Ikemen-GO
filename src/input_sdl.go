@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/binary"
+	"encoding/hex"
 	"math"
 	"os"
 	"runtime"
@@ -274,12 +276,12 @@ func (input *Input) GetJoystickName(joy int) string {
 	return input.controllers[joy].Name()
 }
 
-func (input *Input) GetJoystickAxes(joy int) *[6]float32 {
+func (input *Input) GetJoystickAxes(joy int) [6]float32 {
 	if joy < 0 || joy >= len(input.controllerstate) {
-		return &[6]float32{0, 0, 0, 0, 0, 0}
+		return [6]float32{0, 0, 0, 0, 0, 0}
 	}
 	axes := NormalizeAxes(&input.controllerstate[joy].Axes)
-	return &axes
+	return axes
 }
 
 func (input *Input) GetJoystickButtons(joy int) []byte {
@@ -304,7 +306,17 @@ func (input *Input) GetJoystickGUID(joy int) string {
 	if joy < 0 || joy >= len(input.controllers) {
 		return ""
 	}
-	return sdl.JoystickGetGUIDString(input.controllers[joy].Joystick().GUID())
+	pid := uint16(input.controllers[joy].Product())
+	pv := uint16(input.controllers[joy].ProductVersion())
+	vid := uint16(input.controllers[joy].Vendor())
+	guid := make([]byte, 16)
+
+	guid[0] = 0x03
+	binary.LittleEndian.PutUint16(guid[4:6], vid)
+	binary.LittleEndian.PutUint16(guid[8:10], pid)
+	binary.LittleEndian.PutUint16(guid[12:14], pv)
+	s := hex.EncodeToString(guid[:])
+	return s
 }
 
 func (input *Input) RumbleController(joy int, lo, hi uint16, ticks uint32) {

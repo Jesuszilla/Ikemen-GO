@@ -3839,17 +3839,17 @@ func (be BytecodeExp) run_ex2(c *Char, i *int, oc *Char) {
 	case OC_ex2_guardcount:
 		sys.bcStack.PushI(c.guardCount)
 	case OC_ex2_analog_leftx:
-		sys.bcStack.PushF((*c.analogAxes)[0])
+		sys.bcStack.PushF(c.analogAxes[0])
 	case OC_ex2_analog_lefty:
-		sys.bcStack.PushF((*c.analogAxes)[1])
+		sys.bcStack.PushF(c.analogAxes[1])
 	case OC_ex2_analog_rightx:
-		sys.bcStack.PushF((*c.analogAxes)[2])
+		sys.bcStack.PushF(c.analogAxes[2])
 	case OC_ex2_analog_righty:
-		sys.bcStack.PushF((*c.analogAxes)[3])
+		sys.bcStack.PushF(c.analogAxes[3])
 	case OC_ex2_analog_lefttrigger:
-		sys.bcStack.PushF((*c.analogAxes)[4])
+		sys.bcStack.PushF(c.analogAxes[4])
 	case OC_ex2_analog_righttrigger:
-		sys.bcStack.PushF((*c.analogAxes)[5])
+		sys.bcStack.PushF(c.analogAxes[5])
 	default:
 		sys.errLog.Printf("%v\n", be[*i-1])
 		c.panic()

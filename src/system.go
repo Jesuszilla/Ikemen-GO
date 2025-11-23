@@ -901,6 +901,41 @@ func (s *System) update() bool {
 		s.preMatchTime = s.frameCounter
 	}
 
+	// Correct the joystick mappings (macOS)
+	for i := 0; i < len(sys.joystickConfig); i++ {
+		if runtime.GOOS == "darwin" && !sys.joystickConfig[i].isInitialized {
+			joyS := i
+			if joyS < len(sys.joystickConfig) {
+				if input.IsJoystickPresent(joyS) {
+					guid := input.GetJoystickGUID(joyS)
+
+					// Correct the inner config
+					if sys.joystickConfig[joyS].GUID != guid && !sys.joystickConfig[joyS].isInitialized {
+						// Swap those that don't match
+						for i := 0; i < len(sys.joystickConfig); i++ {
+							if i != joyS && sys.joystickConfig[i].GUID == guid {
+								sys.joystickConfig[joyS].swap(&sys.joystickConfig[i])
+								logicalPlayerA := sys.joystickConfig[joyS].Joy
+								logicalPlayerB := sys.joystickConfig[i].Joy
+								sys.inputRemap[logicalPlayerA] = joyS
+								sys.inputRemap[logicalPlayerB] = i
+								// cs := *input.controllerstate[joyS]
+								// *input.controllerstate[joyS] = *input.controllerstate[i]
+								// *input.controllerstate[i] = cs
+								// c := input.controllers[joyS]
+								// input.controllers[joyS] = input.controllers[i]
+								// input.controllers[i] = c
+								// fmt.Printf("system.go: inputremap[%v] = %v, inputRemap[%v] = %v\n", joyS, sys.inputRemap[joyS], i, sys.inputRemap[i])
+								// fmt.Printf("system.go: %v, Joy = %v, RealJoy = %v, GUID = %v\n", input.GetJoystickGUID(joyS), joyS, sys.joystickConfig[joyS].Joy, guid)
+								break
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
 	// Restore original resolution after changing aspect ratio
 	if !s.middleOfMatch() {
 		// TODO: This should probably not be based on scrrect

@@ -2909,7 +2909,7 @@ type Char struct {
 	makeDustSpacing   int
 	hitStateChangeIdx int32
 	currentSctrlIndex int32
-	analogAxes        *[6]float32
+	analogAxes        [6]float32
 	//dustOldPos        [3]float32
 }
 
@@ -2939,7 +2939,7 @@ func (c *Char) init(n int, idx int32) {
 		playerNo:      n,
 		helperIndex:   idx,
 		controller:    n,
-		analogAxes:    &[6]float32{},
+		analogAxes:    [6]float32{},
 		animPN:        n,
 		id:            -1,
 		runorder:      -1,

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"image"
 	"image/draw"
-	"runtime"
 
 	"github.com/veandco/go-sdl2/sdl"
 )
@@ -300,28 +299,6 @@ func (w *Window) pollEvents() {
 			joyS := int(t.Which)
 			input.controllers[joyS] = sdl.GameControllerOpen(joyS)
 			input.controllerstate[joyS].HasRumble = input.controllers[joyS].HasRumble()
-
-			// Correct the joystick mappings (macOS)
-			if runtime.GOOS == "darwin" {
-				if joyS < len(sys.joystickConfig) {
-					if input.IsJoystickPresent(joyS) {
-						guid := input.GetJoystickGUID(joyS)
-
-						// Correct the inner config
-						if sys.joystickConfig[joyS].GUID != guid && !sys.joystickConfig[joyS].isInitialized {
-							// Swap those that don't match
-							for i := 0; i < len(sys.joystickConfig); i++ {
-								if sys.joystickConfig[i].Joy != joyS && sys.joystickConfig[i].GUID == guid {
-									sys.joystickConfig[joyS].swap(&sys.joystickConfig[i])
-									sys.inputRemap[joyS] = i
-									sys.inputRemap[i] = joyS
-									break
-								}
-							}
-						}
-					}
-				}
-			}
 		case sdl.JoyDeviceRemovedEvent:
 			if controller := input.controllers[int(t.Which)]; controller != nil {
 				controller.Close()
