@@ -4355,6 +4355,41 @@ func (c *Compiler) forceFeedback(is IniSection, sc *StateControllerBase, _ int8)
 	return *ret, err
 }
 
+func (c *Compiler) assertAnalogVector(is IniSection, sc *StateControllerBase, _ int8) (StateController, error) {
+	ret, err := (*assertAnalogVector)(sc), c.stateSec(is, func() error {
+		if err := c.paramValue(is, sc, "redirectid",
+			assertAnalogVector_redirectid, VT_Int, 1, false); err != nil {
+			return err
+		}
+		if err := c.paramValue(is, sc, "leftx",
+			assertAnalogVector_leftx, VT_Float, 1, false); err != nil {
+			return err
+		}
+		if err := c.paramValue(is, sc, "lefty",
+			assertAnalogVector_lefty, VT_Float, 1, false); err != nil {
+			return err
+		}
+		if err := c.paramValue(is, sc, "rightx",
+			assertAnalogVector_rightx, VT_Float, 1, false); err != nil {
+			return err
+		}
+		if err := c.paramValue(is, sc, "righty",
+			assertAnalogVector_righty, VT_Float, 1, false); err != nil {
+			return err
+		}
+		if err := c.paramValue(is, sc, "lefttrigger",
+			assertAnalogVector_lefttrigger, VT_Float, 1, false); err != nil {
+			return err
+		}
+		if err := c.paramValue(is, sc, "righttrigger",
+			assertAnalogVector_righttrigger, VT_Float, 1, false); err != nil {
+			return err
+		}
+		return nil
+	})
+	return *ret, err
+}
+
 func (c *Compiler) assertInput(is IniSection, sc *StateControllerBase, _ int8) (StateController, error) {
 	ret, err := (*assertInput)(sc), c.stateSec(is, func() error {
 		if err := c.paramValue(is, sc, "redirectid",

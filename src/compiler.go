@@ -129,6 +129,7 @@ func newCompiler() *Compiler {
 		"width":              c.width,
 		"zoom":               c.zoom,
 		// Ikemen state controllers
+		"assertanalogvector":   c.assertAnalogVector,
 		"assertcommand":        c.assertCommand,
 		"assertinput":          c.assertInput,
 		"camera":               c.cameraCtrl,

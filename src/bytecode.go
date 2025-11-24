@@ -10791,6 +10791,51 @@ func (sc assertCommand) Run(c *Char, _ []int32) bool {
 	return false
 }
 
+type assertAnalogVector StateControllerBase
+
+const (
+	assertAnalogVector_leftx byte = iota
+	assertAnalogVector_lefty
+	assertAnalogVector_rightx
+	assertAnalogVector_righty
+	assertAnalogVector_lefttrigger
+	assertAnalogVector_righttrigger
+	assertAnalogVector_redirectid
+)
+
+func (sc assertAnalogVector) Run(c *Char, _ []int32) bool {
+	crun := getRedirectedChar(c, StateControllerBase(sc), assertAnalogVector_redirectid, "AssertAnalogVector")
+	if crun == nil {
+		return false
+	}
+
+	var axes [6]float32 = [6]float32{0, 0, 0, 0, 0, 0}
+
+	StateControllerBase(sc).run(c, func(paramID byte, exp []BytecodeExp) bool {
+		switch paramID {
+		case assertAnalogVector_leftx:
+			axes[0] = ClampF(exp[0].evalF(c), -1.0, 1.0)
+		case assertAnalogVector_lefty:
+			axes[1] = ClampF(exp[0].evalF(c), -1.0, 1.0)
+		case assertAnalogVector_rightx:
+			axes[2] = ClampF(exp[0].evalF(c), -1.0, 1.0)
+		case assertAnalogVector_righty:
+			axes[3] = ClampF(exp[0].evalF(c), -1.0, 1.0)
+		case assertAnalogVector_lefttrigger:
+			axes[4] = ClampF(exp[0].evalF(c), 0, 1.0)
+		case assertAnalogVector_righttrigger:
+			axes[5] = ClampF(exp[0].evalF(c), 0, 1.0)
+		}
+		return true
+	})
+
+	for i := 0; i < len(axes); i++ {
+		crun.analogAxes[i] = axes[i]
+	}
+
+	return false
+}
+
 type assertInput StateControllerBase
 
 const (
